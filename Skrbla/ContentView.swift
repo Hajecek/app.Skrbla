@@ -9,13 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        AmountInputView(onContinue: { amount in
+            print("Continue with amount: \(amount)")
+        }, onClose: {
+            print("Closed amount input")
+        })
     }
 }
 
