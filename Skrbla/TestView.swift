@@ -395,9 +395,6 @@ private extension AmountInputView {
         let text = formatter.string(from: number) ?? "\(number) Kč"
         // Multiple logging backends for reliability on device and simulator
         print("Částka:", text)
-        NSLog("[Skrbla] Částka: %@", text)
-        let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Skrbla", category: "AmountInput")
-        logger.info("Částka: \(text, privacy: .public)")
     }
 }
 
