@@ -13,6 +13,8 @@ struct AmountInputView: View {
     @State private var isFocused: Bool = true
     @State private var amountScale: CGFloat = 1.0
     @State private var fractionalCursor: Int? = nil // 0..2 when after separator, nil otherwise
+    @State private var amountIntrinsicSize: CGSize = .zero
+    @State private var amountContainerWidth: CGFloat = 0
     var onContinue: (Decimal) -> Void = { _ in }
     var onClose: () -> Void = {}
 
@@ -110,6 +112,17 @@ struct AmountInputView: View {
         return tokens
     }
 
+    // Scale to fit available width (caps the large base font)
+    // Scale based on velikost částky (práh: tisíce a výš)
+    private var magnitudeScale: CGFloat {
+        let integer = NSDecimalNumber(decimal: amountDecimal).intValue
+        if integer >= 1_000_000 { return 0.7 }
+        if integer >= 100_000 { return 0.8 }
+        if integer >= 10_000 { return 0.9 }
+        if integer >= 1_000 { return 0.95 }
+        return 1.0
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
@@ -137,8 +150,26 @@ struct AmountInputView: View {
                         }
                     }
                 }
-                .scaleEffect(amountScale)
+                .overlay(
+                    HStack(spacing: 12) {
+                        Text(currencySymbol)
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.clear)
+                        HStack(spacing: 0) {
+                            ForEach(Array(digitDisplayTokens.enumerated()), id: \.offset) { _, token in
+                                Text(token.0)
+                                    .font(.system(size: 96, weight: .bold))
+                                    .opacity(0)
+                            }
+                        }
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .measureSize { amountIntrinsicSize = $0 }
+                )
+                .scaleEffect(amountScale * magnitudeScale)
                 .animation(.spring(response: 0.18, dampingFraction: 0.65), value: amountScale)
+                .animation(.spring(response: 0.22, dampingFraction: 0.85), value: magnitudeScale)
                 .padding(.bottom, 48)
 
                 // Keypad
@@ -159,6 +190,7 @@ struct AmountInputView: View {
                 }
             }
         }
+        .onAppear { amountContainerWidth = UIScreen.main.bounds.width - 48 }
     }
 
     private var keypad: some View {
@@ -343,6 +375,26 @@ private enum Haptics {
     static func rigid() {
         let generator = UIImpactFeedbackGenerator(style: .rigid)
         generator.impactOccurred()
+    }
+}
+
+// MARK: - Size reader
+private struct SizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private extension View {
+    func measureSize(onChange: @escaping (CGSize) -> Void) -> some View {
+        background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(key: SizePreferenceKey.self, value: proxy.size)
+            }
+        )
+        .onPreferenceChange(SizePreferenceKey.self, perform: onChange)
     }
 }
 
