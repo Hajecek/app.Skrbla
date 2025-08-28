@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import OSLog
 
 struct AmountInputView: View {
     @State private var rawInput: String = "" // Stores digits and optional decimal separator
@@ -178,7 +179,10 @@ struct AmountInputView: View {
                 keypad
 
                 // Continue button
-                Button(action: { onContinue(amountDecimal) }) {
+                Button(action: {
+                    logAmountToConsole()
+                    onContinue(amountDecimal)
+                }) {
                     Text("Continue")
                         .font(.system(size: 24, weight: .semibold))
                         .foregroundColor(.white)
@@ -377,6 +381,23 @@ private enum Haptics {
     static func rigid() {
         let generator = UIImpactFeedbackGenerator(style: .rigid)
         generator.impactOccurred()
+    }
+}
+
+// MARK: - Logging
+private extension AmountInputView {
+    func logAmountToConsole() {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "cs_CZ")
+        formatter.numberStyle = .currency
+        formatter.currencySymbol = "Kč"
+        let number = NSDecimalNumber(decimal: amountDecimal)
+        let text = formatter.string(from: number) ?? "\(number) Kč"
+        // Multiple logging backends for reliability on device and simulator
+        print("Částka:", text)
+        NSLog("[Skrbla] Částka: %@", text)
+        let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Skrbla", category: "AmountInput")
+        logger.info("Částka: \(text, privacy: .public)")
     }
 }
 
