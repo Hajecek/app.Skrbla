@@ -20,6 +20,7 @@ struct AmountInputView: View {
 
     private let currencySymbol: String = "Kč"
     private let maxFractionDigits = 2
+    private let continueTopSpacing: CGFloat = 48
 
     private var decimalSeparator: String { Locale.current.decimalSeparator ?? "," }
 
@@ -159,6 +160,7 @@ struct AmountInputView: View {
                             ForEach(Array(digitDisplayTokens.enumerated()), id: \.offset) { _, token in
                                 Text(token.0)
                                     .font(.system(size: 96, weight: .bold))
+                                    .monospacedDigit()
                                     .opacity(0)
                             }
                         }
@@ -185,7 +187,7 @@ struct AmountInputView: View {
                         .background(Color.green)
                         .clipShape(Capsule())
                         .padding(.horizontal, 24)
-                        .padding(.top, 24)
+                        .padding(.top, continueTopSpacing)
                         .padding(.bottom, 24)
                 }
             }
@@ -332,7 +334,6 @@ struct AmountInputView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             AmountInputView()
-            AmountInputView()
                 .preferredColorScheme(.dark)
         }
     }
@@ -355,6 +356,7 @@ private struct AnimatedDigitText: View {
     var body: some View {
         Text(text)
             .font(.system(size: 96, weight: .bold))
+            .monospacedDigit()
             .foregroundColor(color)
             .minimumScaleFactor(0.5)
             .lineLimit(1)
