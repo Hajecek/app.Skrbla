@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UIKit
-import OSLog
 
 struct AmountInputView: View {
     @State private var rawInput: String = "" // Stores digits and optional decimal separator
