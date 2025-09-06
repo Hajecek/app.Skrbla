@@ -298,13 +298,13 @@ struct AddScreenTestView: View {
                 }
             }
         }
-        .onChange(of: speech.transcript) { newValue in
+        .onChange(of: speech.transcript) { _, newValue in
             transcript = newValue
             if !newValue.isEmpty {
                 showResults = true
             }
         }
-        .onChange(of: isRecording) { recording in
+        .onChange(of: isRecording) { _, recording in
             if recording {
                 // Spuštění animací při začátku nahrávání
                 withAnimation(.linear(duration: 10).repeatForever(autoreverses: true)) {
@@ -365,15 +365,22 @@ struct Transaction: Identifiable {
 // MARK: - Parser
 
 struct VoiceTransactionParser {
+    private static let expenseWords = [
+        "koupil", "koupila", "zaplatil", "zaplatila", "utratil", "utratila",
+        "stalo", "stála", "stalo me", "stalo mě", "natankoval", "objednal", "objednala"
+    ]
+    
+    private static let incomeWords = [
+        "dostal", "dostala", "prislo", "přišlo", "prisly", "přišly",
+        "prisla", "přišla", "vydelal", "vydělala", "ziskal", "získala",
+        "prijem", "příjem", "pripsali", "připsali", "obdržel", "obdrzel"
+    ]
+    
     static func parse(text: String) -> Transaction? {
         let original = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !original.isEmpty else { return nil }
 
         let normalized = normalize(original)
-
-        // Heuristika typů
-        let expenseWords = ["koupil", "koupila", "zaplatil", "zaplatila", "utratil", "utratila", "stalo", "stála", "stalo me", "stalo mě", "natankoval", "objednal", "objednala"]
-        let incomeWords  = ["dostal", "dostala", "prislo", "přišlo", "prisly", "přišly", "prisla", "přišla", "vydelal", "vydělala", "ziskal", "získala", "prijem", "příjem", "pripsali", "připsali", "obdržel", "obdrzel"]
 
         let expenseScore = expenseWords.reduce(0) { $0 + (normalized.contains($1) ? 1 : 0) }
         let incomeScore = incomeWords.reduce(0) { $0 + (normalized.contains($1) ? 1 : 0) }
