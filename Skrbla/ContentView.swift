@@ -9,11 +9,13 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        AmountInputView(onContinue: { amount in
-            print("Continue with amount: \(amount)")
-        }, onClose: {
-            print("Closed amount input")
-        })
+        // AmountInputView(onContinue: { amount in
+        //     print("Continue with amount: \(amount)")
+        // }, onClose: {
+        //     print("Closed amount input")
+        // })
+        
+        AddScreenTestView()
     }
 }
 
