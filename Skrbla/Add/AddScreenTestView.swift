@@ -32,12 +32,20 @@ struct AddScreenTestView: View {
                     // Animované pozadí uvnitř koule - vrstva 1 (aktivní pouze při nahrávání)
                     Circle()
                         .fill(
-                            LinearGradient(
+                            isRecording ? LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.blue.opacity(0.6),
                                     Color.purple.opacity(0.4),
                                     Color.blue.opacity(0.3),
                                     Color.black.opacity(0.8)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ) : LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.8),
+                                    Color.white.opacity(0.6),
+                                    Color.white.opacity(0.4)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -51,12 +59,20 @@ struct AddScreenTestView: View {
                     // Animované pozadí uvnitř koule - vrstva 2 (aktivní pouze při nahrávání)
                     Circle()
                         .fill(
-                            LinearGradient(
+                            isRecording ? LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.white.opacity(0.3),
                                     Color.blue.opacity(0.5),
                                     Color.purple.opacity(0.2),
                                     Color.black.opacity(0.6)
+                                ]),
+                                startPoint: .topTrailing,
+                                endPoint: .bottomLeading
+                            ) : LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.3),
+                                    Color.white.opacity(0.1),
+                                    Color.white.opacity(0.2)
                                 ]),
                                 startPoint: .topTrailing,
                                 endPoint: .bottomLeading
@@ -70,7 +86,7 @@ struct AddScreenTestView: View {
                     // Animované pozadí uvnitř koule - vrstva 3 (radiální, aktivní pouze při nahrávání)
                     Circle()
                         .fill(
-                            RadialGradient(
+                            isRecording ? RadialGradient(
                                 gradient: Gradient(colors: [
                                     Color.blue.opacity(0.4),
                                     Color.purple.opacity(0.3),
@@ -78,6 +94,15 @@ struct AddScreenTestView: View {
                                     Color.black.opacity(0.7)
                                 ]),
                                 center: isRecording ? UnitPoint(x: 0.3 + animationPhase * 0.4, y: 0.2 + animationPhase * 0.6) : UnitPoint(x: 0.5, y: 0.5),
+                                startRadius: 20,
+                                endRadius: 120
+                            ) : RadialGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.4),
+                                    Color.white.opacity(0.2),
+                                    Color.white.opacity(0.1)
+                                ]),
+                                center: UnitPoint(x: 0.5, y: 0.5),
                                 startRadius: 20,
                                 endRadius: 120
                             )
@@ -89,11 +114,19 @@ struct AddScreenTestView: View {
                     // Vnější kruh pro definici hranice koule
                     Circle()
                         .stroke(
-                            LinearGradient(
+                            isRecording ? LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.white.opacity(0.8),
                                     Color.blue.opacity(0.6),
                                     Color.blue.opacity(0.8)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ) : LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.8),
+                                    Color.white.opacity(0.4),
+                                    Color.white.opacity(0.6)
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -102,11 +135,17 @@ struct AddScreenTestView: View {
                         )
                         .frame(width: 240, height: 240)
                 }
-                .scaleEffect(isRecording ? 1.15 : 0.8)
+                .scaleEffect(isRecording ? 1.15 : 0.6)
                 .animation(.easeInOut(duration: 0.5), value: isRecording)
-                .shadow(color: isRecording ? .blue.opacity(0.5) : .blue.opacity(0.2), radius: isRecording ? 20 : 10)
-                .shadow(color: isRecording ? .white.opacity(0.3) : .white.opacity(0.1), radius: isRecording ? 10 : 5)
+                .shadow(color: isRecording ? .blue.opacity(0.5) : .white.opacity(0.3), radius: isRecording ? 20 : 8)
+                .shadow(color: isRecording ? .white.opacity(0.3) : .white.opacity(0.2), radius: isRecording ? 10 : 4)
                 .blur(radius: isRecording ? 1 : 0)
+                .onAppear {
+                    // Jemná pulzující animace pro bílou kouli
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                        animationOffset = 10
+                    }
+                }
                 
                 Spacer()
                 
