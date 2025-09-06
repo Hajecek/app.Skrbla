@@ -334,7 +334,7 @@ struct VoiceTransactionParser {
 
         // Heuristika typů
         let expenseWords = ["koupil", "koupila", "zaplatil", "zaplatila", "utratil", "utratila", "stalo", "stála", "stalo me", "stalo mě", "natankoval", "objednal", "objednala"]
-        let incomeWords  = ["dostal", "dostala", "prislo", "přišlo", "prisly", "přišly", "prisla", "přišla", "vydelal", "vydělala", "ziskal", "získala", "prijem", "příjem", "pripsali", "připsali"]
+        let incomeWords  = ["dostal", "dostala", "prislo", "přišlo", "prisly", "přišly", "prisla", "přišla", "vydelal", "vydělala", "ziskal", "získala", "prijem", "příjem", "pripsali", "připsali", "obdržel", "obdrzel"]
 
         let expenseScore = expenseWords.reduce(0) { $0 + (normalized.contains($1) ? 1 : 0) }
         let incomeScore = incomeWords.reduce(0) { $0 + (normalized.contains($1) ? 1 : 0) }
