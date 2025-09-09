@@ -9,13 +9,20 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        // AmountInputView(onContinue: { amount in
-        //     print("Continue with amount: \(amount)")
-        // }, onClose: {
-        //     print("Closed amount input")
-        // })
-        
-        AddScreenTestView()
+        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex in
+            switch selectedIndex {
+            case 0:
+                HomeView()
+            case 1:
+                AddView()
+            case 2:
+                HistoryView()
+            case 3:
+                ProfileView()
+            default:
+                HomeView()
+            }
+        }
     }
 }
 
