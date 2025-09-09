@@ -1,8 +1,5 @@
 //
-//  IntroPage.swift
-//  InvitesIntroPage
 //
-//  Created by Balaji Venkatesh on 11/02/25.
 //
 
 import SwiftUI
