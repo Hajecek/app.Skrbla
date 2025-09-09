@@ -167,20 +167,18 @@ struct MainContentView<Content: View>: View {
         self.content = content
     }
     
-    var body: some View {
+       var body: some View {
         ZStack {
             // Background
             Color(.systemBackground)
                 .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                // Content
-                content(selectedTab)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                // Floating bottom navigation bar
-                ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs)
-            }
+            // Content behind the floating bar
+            content(selectedTab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .overlay(alignment: .bottom) {
+            ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs)
         }
     }
 }
