@@ -45,16 +45,41 @@ struct AuthenticationView: View {
                         }
                     }
                     
-                    // Icon container
+                    // Icon container s iOS 16+ glass effect
                     ZStack {
-                        // Background circle
+                        // Glass effect background - iOS 16+ style
                         Circle()
                             .fill(.ultraThinMaterial)
                             .frame(width: 100, height: 100)
                             .overlay(
                                 Circle()
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.2),
+                                                Color.white.opacity(0.05)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
                             )
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.3),
+                                                Color.white.opacity(0.1)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                            .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
                         
                         // Icon
                         Image(systemName: showSuccessAnimation ? "checkmark" : "faceid")
@@ -105,4 +130,5 @@ struct AuthenticationView: View {
 #Preview {
     AuthenticationView(authManager: AuthenticationManager())
 }
+
 
