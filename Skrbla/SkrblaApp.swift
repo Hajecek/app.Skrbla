@@ -65,9 +65,9 @@ struct SkrblaApp: App {
             .onReceive(authManager.$isAuthenticated) { isAuthenticated in
                 if isAuthenticated {
                     print("✅ Ověření úspěšné - přesměrovávám")
-                    // Počkat na success animaci a pak přesměrovat
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation(.easeInOut(duration: 0.5)) {
+                    // Pouze 0.5 sekundy success animace a pak přesměrovat
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             showAuthentication = false
                         }
                         // Resetovat stav pozadí
