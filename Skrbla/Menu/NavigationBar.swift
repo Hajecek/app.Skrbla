@@ -45,25 +45,26 @@ struct ModernBottomNavigationBar: View {
                     isSelected: selectedTab == index,
                     animation: animation
                 ) {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    // iOS-like spring animation with haptic feedback
+                    withAnimation(.interpolatingSpring(stiffness: 400, damping: 30)) {
                         selectedTab = index
                     }
                     
-                    // Haptic feedback
+                    // iOS-like haptic feedback
                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                     impactFeedback.impactOccurred()
                 }
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 8)
         .padding(.vertical, 12)
         .background(
             // Floating glass background
-            RoundedRectangle(cornerRadius: 25)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
                 .background(
-                    RoundedRectangle(cornerRadius: 25)
+                    RoundedRectangle(cornerRadius: 20)
                         .fill(
                             LinearGradient(
                                 colors: [
@@ -76,7 +77,7 @@ struct ModernBottomNavigationBar: View {
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 25)
+                    RoundedRectangle(cornerRadius: 20)
                         .stroke(
                             LinearGradient(
                                 colors: [
@@ -89,11 +90,11 @@ struct ModernBottomNavigationBar: View {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
+                .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
                 .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
         )
-        .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 4)
     }
 }
 
@@ -138,16 +139,18 @@ struct FloatingTabButton: View {
                                     lineWidth: 1
                                 )
                         )
-                        .frame(width: 50, height: 50)
+                        .frame(width: 48, height: 48)
                         .matchedGeometryEffect(id: "selectedTab", in: animation)
-                        .shadow(color: .accentColor.opacity(0.2), radius: 8, x: 0, y: 4)
+                        .shadow(color: .accentColor.opacity(0.2), radius: 6, x: 0, y: 3)
+                        .scaleEffect(isSelected ? 1.0 : 0.95)
+                        .animation(.interpolatingSpring(stiffness: 500, damping: 30), value: isSelected)
                 }
                 
                 Image(systemName: isSelected ? (tab.selectedIcon ?? tab.icon) : tab.icon)
-                    .font(.system(size: 22, weight: isSelected ? .semibold : .medium))
+                    .font(.system(size: 20, weight: isSelected ? .semibold : .medium))
                     .foregroundColor(isSelected ? .accentColor : .primary)
-                    .scaleEffect(isSelected ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+                    .scaleEffect(isSelected ? 1.08 : 1.0)
+                    .animation(.interpolatingSpring(stiffness: 400, damping: 25), value: isSelected)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
@@ -167,15 +170,24 @@ struct MainContentView<Content: View>: View {
         self.content = content
     }
     
-       var body: some View {
+    var body: some View {
         ZStack {
             // Background
             Color(.systemBackground)
                 .ignoresSafeArea()
             
-            // Content behind the floating bar
-            content(selectedTab)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Content behind the floating bar with iOS-like animated transitions
+            ZStack {
+                ForEach(0..<tabs.count, id: \.self) { index in
+                    content(index)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .opacity(selectedTab == index ? 1 : 0)
+                        .scaleEffect(selectedTab == index ? 1 : 0.98)
+                        .offset(y: selectedTab == index ? 0 : 10)
+                        .animation(.interpolatingSpring(stiffness: 300, damping: 30), value: selectedTab)
+                        .zIndex(selectedTab == index ? 1 : 0)
+                }
+            }
         }
         .overlay(alignment: .bottom) {
             ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs)
