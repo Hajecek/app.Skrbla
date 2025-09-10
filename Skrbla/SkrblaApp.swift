@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct SkrblaApp: App {
     @State private var showLaunchScreen = true
+    @State private var showAuthentication = false
     @AppStorage("isFirstLaunch") var isFirstLaunch: Bool = true
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var appStateManager = AppStateManager()
@@ -17,47 +18,61 @@ struct SkrblaApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // Main app content
-                ContentView()
-                    .opacity(showLaunchScreen ? 0 : 1)
-                    .animation(.easeIn(duration: 0.3).delay(0.2), value: showLaunchScreen)
-                    .environmentObject(authManager)
-                    .environmentObject(appStateManager)
+                // Main app content - zobrazit pouze pokud je uživatel ověřen
+                if authManager.isAuthenticated && !showAuthentication {
+                    ContentView()
+                        .opacity(showLaunchScreen ? 0 : 1)
+                        .animation(.easeIn(duration: 0.3).delay(0.2), value: showLaunchScreen)
+                        .environmentObject(authManager)
+                        .environmentObject(appStateManager)
+                }
                 
-                // Launch screen
-                if showLaunchScreen {
+                // Launch screen - zobrazit pouze při prvním spuštění
+                if showLaunchScreen && !showAuthentication && !appStateManager.shouldRequireAuth {
                     LaunchView()
                         .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                withAnimation {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                withAnimation(.easeInOut(duration: 0.5)) {
                                     showLaunchScreen = false
+                                    showAuthentication = true
                                 }
                             }
                         }
                 }
                 
                 // Onboarding
-                if isFirstLaunch {
+                if isFirstLaunch && !showAuthentication && !showLaunchScreen && !appStateManager.shouldRequireAuth {
                     OnboardingView()
                         .transition(.opacity)
                 }
                 
-                // Authentication overlay
-                if authManager.showAuthentication {
+                // Authentication overlay - zobrazit při prvním spuštění nebo při návratu z pozadí
+                if showAuthentication || appStateManager.shouldRequireAuth {
                     AuthenticationView(authManager: authManager)
                         .transition(.opacity)
                         .zIndex(1000)
                 }
             }
             .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
-                if shouldRequire && !authManager.isAuthenticated {
+                if shouldRequire {
+                    // Při návratu z pozadí - vždy zobrazit ověření
+                    print("🔄 Návrat z pozadí - vyžaduje se ověření")
                     authManager.requireAuthentication()
+                    showAuthentication = true
+                    showLaunchScreen = false
                 }
             }
-            .onAppear {
-                // Při spuštění aplikace ověřit, zda je potřeba autentifikace
-                if appStateManager.shouldRequireAuthentication() {
-                    authManager.requireAuthentication()
+            .onReceive(authManager.$isAuthenticated) { isAuthenticated in
+                if isAuthenticated {
+                    print("✅ Ověření úspěšné - přesměrovávám")
+                    // Počkat na success animaci a pak přesměrovat
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            showAuthentication = false
+                        }
+                        // Resetovat stav pozadí
+                        appStateManager.resetBackgroundState()
+                    }
                 }
             }
         }

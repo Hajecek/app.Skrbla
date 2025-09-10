@@ -44,25 +44,31 @@ class AppStateManager: ObservableObject {
     
     // MARK: - Background Handling
     @objc private func appDidEnterBackground() {
+        print("📱 Aplikace jde do pozadí")
         isInBackground = true
         backgroundTime = Date()
         
         // Spustit timer pro sledování času v pozadí
         backgroundTimer = Timer.scheduledTimer(withTimeInterval: backgroundThreshold, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
+                print("⏰ 5 sekund v pozadí - nastavuji shouldRequireAuth = true")
                 self?.shouldRequireAuth = true
             }
         }
     }
     
     @objc private func appWillEnterForeground() {
+        print("📱 Aplikace se vrací z pozadí")
         isInBackground = false
         backgroundTimer?.invalidate()
         backgroundTimer = nil
         
         // Zkontrolovat, zda je potřeba ověření
         if shouldRequireAuth {
-            shouldRequireAuth = false
+            print("🔐 Potřebuje se ověření - shouldRequireAuth = true")
+        } else {
+            print("✅ Není potřeba ověření - resetuji stav")
+            backgroundTime = nil
         }
     }
     
@@ -75,6 +81,7 @@ class AppStateManager: ObservableObject {
     
     // MARK: - Reset
     func resetBackgroundState() {
+        print("🔄 Resetuji stav pozadí")
         backgroundTime = nil
         shouldRequireAuth = false
         backgroundTimer?.invalidate()

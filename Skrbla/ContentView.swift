@@ -12,26 +12,18 @@ struct ContentView: View {
     @EnvironmentObject var appStateManager: AppStateManager
     
     var body: some View {
-        Group {
-            if authManager.isAuthenticated {
-                MainContentView(tabs: TabItem.defaultTabs) { selectedIndex in
-                    switch selectedIndex {
-                    case 0:
-                        HomeView()
-                    case 1:
-                        AddView()
-                    case 2:
-                        HistoryView()
-                    case 3:
-                        ProfileView()
-                    default:
-                        HomeView()
-                    }
-                }
-            } else {
-                // Zobrazit loading nebo prázdnou obrazovku během ověření
-                Color.black
-                    .ignoresSafeArea()
+        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex in
+            switch selectedIndex {
+            case 0:
+                HomeView()
+            case 1:
+                AddView()
+            case 2:
+                HistoryView()
+            case 3:
+                ProfileView()
+            default:
+                HomeView()
             }
         }
         .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in

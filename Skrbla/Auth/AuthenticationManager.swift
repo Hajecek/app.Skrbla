@@ -39,30 +39,27 @@ class AuthenticationManager: ObservableObject {
     
     // MARK: - Authentication Methods
     func authenticateWithBiometrics() {
-        let policy: LAPolicy = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) ? 
+        print("🔐 Spouštím biometrické ověření")
+        
+        // Vytvořit nový kontext pro každé ověření
+        let newContext = LAContext()
+        
+        // Zkontrolovat dostupnost biometrického ověření
+        var error: NSError?
+        let canEvaluateBiometrics = newContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        
+        let policy: LAPolicy = canEvaluateBiometrics ? 
             .deviceOwnerAuthenticationWithBiometrics : .deviceOwnerAuthentication
         
-        context.evaluatePolicy(policy, localizedReason: reason) { [weak self] success, error in
+        newContext.evaluatePolicy(policy, localizedReason: reason) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
+                    print("✅ Ověření úspěšné")
                     self?.isAuthenticated = true
                     self?.showAuthentication = false
                     self?.authenticationError = nil
                 } else {
-                    self?.authenticationError = error?.localizedDescription ?? "Ověření se nezdařilo"
-                }
-            }
-        }
-    }
-    
-    func authenticateWithPasscode() {
-        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { [weak self] success, error in
-            DispatchQueue.main.async {
-                if success {
-                    self?.isAuthenticated = true
-                    self?.showAuthentication = false
-                    self?.authenticationError = nil
-                } else {
+                    print("❌ Ověření se nezdařilo: \(error?.localizedDescription ?? "Neznámá chyba")")
                     self?.authenticationError = error?.localizedDescription ?? "Ověření se nezdařilo"
                 }
             }
@@ -71,11 +68,14 @@ class AuthenticationManager: ObservableObject {
     
     // MARK: - Authentication State Management
     func requireAuthentication() {
+        print(" Vyžaduji ověření - resetuji stav")
         isAuthenticated = false
         showAuthentication = true
+        authenticationError = nil
     }
     
     func logout() {
+        print("🚪 Odhlašuji uživatele")
         isAuthenticated = false
         showAuthentication = false
         authenticationError = nil

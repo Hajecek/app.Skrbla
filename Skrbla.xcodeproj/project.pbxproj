@@ -29,9 +29,22 @@
 		071DF5602E5D9D0E00927A7B /* SkrblaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SkrblaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		079069F92E722A5000F865B6 /* Exceptions for "Skrbla" folder in "Skrbla" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 071DF5482E5D9D0D00927A7B /* Skrbla */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		071DF54B2E5D9D0D00927A7B /* Skrbla */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				079069F92E722A5000F865B6 /* Exceptions for "Skrbla" folder in "Skrbla" target */,
+			);
 			path = Skrbla;
 			sourceTree = "<group>";
 		};
@@ -400,8 +413,10 @@
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Skrbla/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Skrbla;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "plikace používá Face ID pro bezpečné ověření vaší identity při návratu z pozadí.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Aplikace potřebuje přístup k mikrofonu pro rozpoznávání řeči při přidávání transakcí.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Aplikace potřebuje rozpoznávání řeči pro analýzu hlasových příkazů při přidávání transakcí.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -432,8 +447,10 @@
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Skrbla/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Skrbla;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "plikace používá Face ID pro bezpečné ověření vaší identity při návratu z pozadí.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Aplikace potřebuje přístup k mikrofonu pro rozpoznávání řeči při přidávání transakcí.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Aplikace potřebuje rozpoznávání řeči pro analýzu hlasových příkazů při přidávání transakcí.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
