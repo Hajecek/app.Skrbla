@@ -23,36 +23,46 @@ struct AuthenticationView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                // Face ID Logo s animací
-                VStack(spacing: 0) {
-                    ZStack {
-                        // Pulsující kruhy během ověření
-                        if isAuthenticating {
-                            ForEach(0..<3) { index in
-                                Circle()
-                                    .stroke(
-                                        Color.blue.opacity(0.3),
-                                        lineWidth: 2
-                                    )
-                                    .frame(width: 200 + CGFloat(index * 40), height: 200 + CGFloat(index * 40))
-                                    .scaleEffect(isAnimating ? 1.2 : 0.8)
-                                    .opacity(isAnimating ? 0.1 : 0.6)
-                                    .animation(
-                                        .easeInOut(duration: 2.0 + Double(index) * 0.5)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(index) * 0.3),
-                                        value: isAnimating
-                                    )
-                            }
+                // Face ID Icon - pouze ikona
+                ZStack {
+                    // Pulsující kruhy během ověření
+                    if isAuthenticating {
+                        ForEach(0..<2) { index in
+                            Circle()
+                                .stroke(
+                                    Color.blue.opacity(0.15),
+                                    lineWidth: 0.5
+                                )
+                                .frame(width: 140 + CGFloat(index * 40), height: 140 + CGFloat(index * 40))
+                                .scaleEffect(isAnimating ? 1.4 : 0.8)
+                                .opacity(isAnimating ? 0.0 : 0.3)
+                                .animation(
+                                    .easeInOut(duration: 2.0)
+                                    .repeatForever(autoreverses: false)
+                                    .delay(Double(index) * 0.4),
+                                    value: isAnimating
+                                )
                         }
+                    }
+                    
+                    // Icon container
+                    ZStack {
+                        // Background circle
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 100, height: 100)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            )
                         
-                        // Hlavní Face ID ikona - bez pozadí
+                        // Icon
                         Image(systemName: showSuccessAnimation ? "checkmark" : "faceid")
                             .foregroundColor(showSuccessAnimation ? .green : .blue)
-                            .font(.system(size: 80))
-                            .scaleEffect(isAnimating ? 1.05 : 1.0)
-                            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                            .font(.system(size: 40, weight: .medium))
                     }
+                    .scaleEffect(isAnimating ? 1.02 : 1.0)
+                    .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimating)
                 }
                 
                 Spacer()
