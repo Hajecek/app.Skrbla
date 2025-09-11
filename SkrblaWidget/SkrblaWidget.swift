@@ -70,36 +70,77 @@ struct SkrblaWidgetEntryView : View {
             }
             
         case .accessoryRectangular:
-            // Obdélníkový widget pro lock screen
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Rozpočet")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+            // Obdélníkový widget pro lock screen s progress barem
+            VStack(alignment: .leading, spacing: 4) {
+                // Horní řádek - částka a procenta
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Rozpočet")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                        
+                        Text("\(utraceno, specifier: "%.0f") Kč")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                    }
                     
-                    Text("\(utraceno, specifier: "%.0f") Kč")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                    Spacer()
                     
-                    Text("z \(budget, specifier: "%.0f") Kč")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text("\(Int(progress * 100))%")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(progress > 0.8 ? .red : .blue)
+                        
+                        Text("z \(budget, specifier: "%.0f")")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
-                Spacer()
+                // Progress bar
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        // Pozadí progress baru
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.3))
+                            .frame(height: 4)
+                        
+                        // Progress bar
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        progress > 0.8 ? .red : .blue,
+                                        progress > 0.8 ? .orange : .cyan
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * progress, height: 4)
+                    }
+                }
+                .frame(height: 4)
                 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(Int(progress * 100))%")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(progress > 0.8 ? .red : .blue)
-                    
-                    Text("Zbývá \(zbyva, specifier: "%.0f")")
+                // Spodní řádek - zbývající částka
+                HStack {
+                    Text("Zbývá \(zbyva, specifier: "%.0f") Kč")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(zbyva > 0 ? .green : .red)
+                        .fontWeight(.medium)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "creditcard.fill")
+                        .font(.caption2)
+                        .foregroundColor(.blue)
                 }
             }
             .padding(.horizontal, 4)
+            .padding(.vertical, 2)
             
         case .accessoryInline:
             // Inline widget pro lock screen
@@ -271,7 +312,7 @@ struct MoneyIcon: View {
                 Circle()
                     .fill(Color.white.opacity(0.6))
                     .frame(width: 8, height: 8)
-                    .offset(x: -12, y: -2)
+                                                .offset(x: -12, y: -2)
                 
                 Spacer()
                 
