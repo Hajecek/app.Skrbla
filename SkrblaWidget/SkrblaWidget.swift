@@ -52,7 +52,69 @@ struct SkrblaWidgetEntryView : View {
     }
 
     var body: some View {
-        if family == .systemSmall {
+        switch family {
+        case .accessoryCircular:
+            // Kruhový widget pro lock screen
+            ZStack {
+                AccessoryWidgetBackground()
+                
+                VStack(spacing: 2) {
+                    Text("\(Int(progress * 100))%")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Text("\(utraceno, specifier: "%.0f")")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+        case .accessoryRectangular:
+            // Obdélníkový widget pro lock screen
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Rozpočet")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(utraceno, specifier: "%.0f") Kč")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    Text("z \(budget, specifier: "%.0f") Kč")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(Int(progress * 100))%")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(progress > 0.8 ? .red : .blue)
+                    
+                    Text("Zbývá \(zbyva, specifier: "%.0f")")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 4)
+            
+        case .accessoryInline:
+            // Inline widget pro lock screen
+            HStack(spacing: 4) {
+                Image(systemName: "creditcard.fill")
+                    .foregroundColor(.blue)
+                
+                Text("\(utraceno, specifier: "%.0f") Kč")
+                    .fontWeight(.semibold)
+                
+                Text("(\(Int(progress * 100))%)")
+                    .foregroundColor(.secondary)
+            }
+            
+        case .systemSmall:
             // Kompaktní verze pro nejmenší widget
             VStack(spacing: 8) {
                 // Hlavní částka
@@ -92,7 +154,8 @@ struct SkrblaWidgetEntryView : View {
                 }
             }
             .padding(12)
-        } else {
+            
+        default:
             // Plná verze pro větší widgety
             VStack(spacing: 0) {
                 // Horní část - informace o utracené částce
@@ -233,6 +296,7 @@ struct SkrblaWidget: Widget {
         }
         .configurationDisplayName("Přehled financí")
         .description("Zobrazuje přehled utracených peněz s progress barem")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 
@@ -248,3 +312,4 @@ extension ConfigurationAppIntent {
 } timeline: {
     SimpleEntry(date: .now, configuration: .defaultConfig)
 }
+
