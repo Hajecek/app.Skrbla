@@ -23,101 +23,95 @@ struct TabItem: Identifiable, Hashable {
 
 // MARK: - Default Tabs Configuration
 extension TabItem {
-    // Titulky ponechávám pro případ budoucího použití, ale v UI se neukazují
-    static let home = TabItem(title: "Pusťte si", icon: "house", selectedIcon: "house.fill")
-    static let add = TabItem(title: "Rádio", icon: "dot.radiowaves.left.and.right", selectedIcon: "dot.radiowaves.left.and.right")
-    static let history = TabItem(title: "Knihovna", icon: "music.note.list", selectedIcon: "music.note.list")
+    // Titulky ponechány pro přístupnost, v UI se nezobrazují
+    static let home = TabItem(title: "Domů", icon: "house", selectedIcon: "house.fill")
+    static let add = TabItem(title: "Přidat", icon: "dot.radiowaves.left.and.right", selectedIcon: "dot.radiowaves.left.and.right")
+    static let history = TabItem(title: "Historie", icon: "music.note.list", selectedIcon: "music.note.list")
     static let profile = TabItem(title: "Profil", icon: "person", selectedIcon: "person.fill")
     
     static let defaultTabs: [TabItem] = [.home, .add, .history, .profile]
 }
 
-// MARK: - Floating Navigation Bar with Liquid Glass Effect (Pill + Separate Round Button)
+// MARK: - Floating Navigation Bar (Capsule) + Separate Round Button
 struct ModernBottomNavigationBar: View {
     @Binding var selectedTab: Int
     let tabs: [TabItem]
     @Namespace private var animation
     
-    // Layout constants tuned to match the reference style (icons only)
-    private let barCorner: CGFloat = 30
+    // iOS-like sizing tuned to the reference (no labels)
     private let barHeight: CGFloat = 68
-    private let bubbleCorner: CGFloat = 18
-    private let bubbleSize: CGSize = CGSize(width: 56, height: 56)
+    private let bubbleHeight: CGFloat = 54   // bublina nižší než pilulka
+    private let bubbleWidth: CGFloat = 64    // širší pro „chip“ dojem jako na obrázku
     private let iconSize: CGFloat = 22
-    private let tabSpacing: CGFloat = 0
-    private let pillHorizontalPadding: CGFloat = 10
-    private let pillVerticalPadding: CGFloat = 6
-    private let externalSpacing: CGFloat = 12 // spacing between pill and round button
+    private let horizontalPadding: CGFloat = 24
+    private let innerHorizontalPadding: CGFloat = 12
+    private let innerVerticalPadding: CGFloat = 8
+    private let spacingBetweenPillAndButton: CGFloat = 12
     private let roundButtonSize: CGFloat = 64
     
     var body: some View {
-        HStack(spacing: externalSpacing) {
-            // Main pill container with tabs
-            HStack(spacing: tabSpacing) {
+        HStack(spacing: spacingBetweenPillAndButton) {
+            // Main capsule container with tabs
+            HStack(spacing: 0) {
                 ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
-                    PillTabButton(
+                    CapsuleTabButton(
                         tab: tab,
                         isSelected: selectedTab == index,
                         animation: animation,
-                        bubbleCorner: bubbleCorner,
-                        bubbleSize: bubbleSize,
+                        bubbleSize: CGSize(width: bubbleWidth, height: bubbleHeight),
                         iconSize: iconSize
                     ) {
                         withAnimation(.interpolatingSpring(stiffness: 520, damping: 32)) {
                             selectedTab = index
                         }
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                     .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, pillHorizontalPadding)
-            .padding(.vertical, pillVerticalPadding)
+            .padding(.horizontal, innerHorizontalPadding)
+            .padding(.vertical, innerVerticalPadding)
             .frame(height: barHeight)
             .background(
                 Group {
                     if #available(iOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: barCorner, style: .continuous)
+                        Capsule()
                             .fill(.clear)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: barCorner, style: .continuous))
+                            .glassEffect(.regular, in: Capsule())
                             .overlay(
-                                RoundedRectangle(cornerRadius: barCorner, style: .continuous)
+                                Capsule()
                                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
                     } else {
-                        RoundedRectangle(cornerRadius: barCorner, style: .continuous)
+                        Capsule()
                             .fill(.ultraThinMaterial)
                             .overlay(
-                                RoundedRectangle(cornerRadius: barCorner, style: .continuous)
+                                Capsule()
                                     .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
                     }
                 }
             )
-            .contentShape(RoundedRectangle(cornerRadius: barCorner, style: .continuous))
+            .contentShape(Capsule())
             
-            // Separate round glass button (now "plus")
+            // Separate round glass button (plus)
             RoundGlassButton(size: roundButtonSize, systemImage: "plus") {
-                // Placeholder action for plus
-                let generator = UIImpactFeedbackGenerator(style: .soft)
-                generator.impactOccurred()
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 8)
         .ignoresSafeArea(edges: .bottom)
     }
 }
 
-// MARK: - Pill Tab Button (icon only, with moving glass bubble on selection)
-private struct PillTabButton: View {
+// MARK: - Capsule Tab Button (icon only + moving glass bubble)
+private struct CapsuleTabButton: View {
     let tab: TabItem
     let isSelected: Bool
     let animation: Namespace.ID
-    let bubbleCorner: CGFloat
     let bubbleSize: CGSize
     let iconSize: CGFloat
     let action: () -> Void
@@ -127,18 +121,18 @@ private struct PillTabButton: View {
             ZStack {
                 if isSelected {
                     if #available(iOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: bubbleCorner, style: .continuous)
+                        Capsule()
                             .fill(.clear)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: bubbleCorner, style: .continuous))
+                            .glassEffect(.regular, in: Capsule())
                             .tint(.accentColor)
                             .frame(width: bubbleSize.width, height: bubbleSize.height)
                             .matchedGeometryEffect(id: "selectedTabBubble", in: animation)
                             .animation(.interpolatingSpring(stiffness: 560, damping: 34), value: isSelected)
                     } else {
-                        RoundedRectangle(cornerRadius: bubbleCorner, style: .continuous)
+                        Capsule()
                             .fill(.ultraThinMaterial)
                             .overlay(
-                                RoundedRectangle(cornerRadius: bubbleCorner, style: .continuous)
+                                Capsule()
                                     .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 1)
                             )
                             .frame(width: bubbleSize.width, height: bubbleSize.height)
@@ -215,11 +209,9 @@ struct MainContentView<Content: View>: View {
     
     var body: some View {
         ZStack {
-            // Background behind everything
             Color(.systemBackground)
                 .ignoresSafeArea()
             
-            // Content behind the floating bar with animated transitions
             ZStack {
                 ForEach(0..<tabs.count, id: \.self) { index in
                     content(index)
