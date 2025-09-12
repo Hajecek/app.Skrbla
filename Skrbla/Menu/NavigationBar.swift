@@ -31,7 +31,7 @@ extension TabItem {
     static let defaultTabs: [TabItem] = [.home, .add, .history, .profile]
 }
 
-// MARK: - Floating Navigation Bar
+// MARK: - Floating Navigation Bar with Enhanced Glass Effect
 struct ModernBottomNavigationBar: View {
     @Binding var selectedTab: Int
     let tabs: [TabItem]
@@ -60,7 +60,7 @@ struct ModernBottomNavigationBar: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
         .background(
-            // Floating glass background
+            // Enhanced floating glass background
             RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
                 .background(
@@ -68,8 +68,8 @@ struct ModernBottomNavigationBar: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.2),
-                                    Color.white.opacity(0.1)
+                                    Color.white.opacity(0.25),
+                                    Color.white.opacity(0.15)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -81,8 +81,8 @@ struct ModernBottomNavigationBar: View {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.4),
-                                    Color.white.opacity(0.2)
+                                    Color.white.opacity(0.5),
+                                    Color.white.opacity(0.3)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -90,15 +90,15 @@ struct ModernBottomNavigationBar: View {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
+                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
         )
         .padding(.horizontal, 24)
         .padding(.bottom, 4)
     }
 }
 
-// MARK: - Floating Tab Button
+// MARK: - Floating Tab Button with Enhanced Glass Effect
 struct FloatingTabButton: View {
     let tab: TabItem
     let isSelected: Bool
@@ -108,40 +108,40 @@ struct FloatingTabButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Floating background for selected state
+                // Enhanced glass background for selected state
                 if isSelected {
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.accentColor.opacity(0.3),
-                                    Color.accentColor.opacity(0.1)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(.ultraThinMaterial)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(.ultraThinMaterial)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.accentColor.opacity(0.4),
+                                            Color.accentColor.opacity(0.2)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(
                                     LinearGradient(
                                         colors: [
-                                            Color.accentColor.opacity(0.6),
-                                            Color.accentColor.opacity(0.2)
+                                            Color.accentColor.opacity(0.7),
+                                            Color.accentColor.opacity(0.3)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
-                                    lineWidth: 1
+                                    lineWidth: 1.5
                                 )
                         )
                         .frame(width: 48, height: 48)
                         .matchedGeometryEffect(id: "selectedTab", in: animation)
-                        .shadow(color: .accentColor.opacity(0.2), radius: 6, x: 0, y: 3)
+                        .shadow(color: .accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
                         .scaleEffect(isSelected ? 1.0 : 0.95)
                         .animation(.interpolatingSpring(stiffness: 500, damping: 30), value: isSelected)
                 }
