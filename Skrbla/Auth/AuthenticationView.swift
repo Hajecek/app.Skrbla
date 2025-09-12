@@ -122,6 +122,7 @@ struct AuthenticationView: View {
     }
     
     private func startAuthentication() {
+        guard !isAuthenticating else { return }
         isAuthenticating = true
         authManager.authenticateWithBiometrics()
     }
