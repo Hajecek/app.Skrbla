@@ -200,9 +200,9 @@ private struct RoundGlassButton: View {
 struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
     let tabs: [TabItem]
-    let content: (Int) -> Content
+    let content: (Int, @escaping (Int) -> Void) -> Content
     
-    init(tabs: [TabItem], @ViewBuilder content: @escaping (Int) -> Content) {
+    init(tabs: [TabItem], @ViewBuilder content: @escaping (Int, @escaping (Int) -> Void) -> Content) {
         self.tabs = tabs
         self.content = content
     }
@@ -214,7 +214,11 @@ struct MainContentView<Content: View>: View {
             
             ZStack {
                 ForEach(0..<tabs.count, id: \.self) { index in
-                    content(index)
+                    content(index, { newIndex in
+                        withAnimation(.interpolatingSpring(stiffness: 520, damping: 32)) {
+                            selectedTab = newIndex
+                        }
+                    })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(selectedTab == index ? 1 : 0)
                         .scaleEffect(selectedTab == index ? 1 : 0.985)
@@ -232,10 +236,10 @@ struct MainContentView<Content: View>: View {
 
 // MARK: - Preview
 #Preview {
-    MainContentView(tabs: TabItem.defaultTabs) { selectedIndex in
+    MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
         switch selectedIndex {
         case 0:
-            HomeView()
+            HomeView(onOpenHistory: { onSelectTab(2) })
         case 1:
             AddView()
         case 2:
@@ -243,8 +247,9 @@ struct MainContentView<Content: View>: View {
         case 3:
             ProfileView()
         default:
-            HomeView()
+            HomeView(onOpenHistory: { onSelectTab(2) })
         }
     }
     .preferredColorScheme(.dark)
 }
+

@@ -12,10 +12,10 @@ struct ContentView: View {
     @EnvironmentObject var appStateManager: AppStateManager
     
     var body: some View {
-        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex in
+        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
             switch selectedIndex {
             case 0:
-                HomeView()
+                HomeView(onOpenHistory: { onSelectTab(2) })
             case 1:
                 AddView()
             case 2:
@@ -23,7 +23,7 @@ struct ContentView: View {
             case 3:
                 ProfileView()
             default:
-                HomeView()
+                HomeView(onOpenHistory: { onSelectTab(2) })
             }
         }
         .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
@@ -39,3 +39,4 @@ struct ContentView: View {
         .environmentObject(AuthenticationManager())
         .environmentObject(AppStateManager())
 }
+
