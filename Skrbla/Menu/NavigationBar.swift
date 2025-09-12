@@ -31,7 +31,7 @@ extension TabItem {
     static let defaultTabs: [TabItem] = [.home, .add, .history, .profile]
 }
 
-// MARK: - Floating Navigation Bar with Enhanced Glass Effect
+// MARK: - Floating Navigation Bar with Liquid Glass Effect
 struct ModernBottomNavigationBar: View {
     @Binding var selectedTab: Int
     let tabs: [TabItem]
@@ -46,7 +46,7 @@ struct ModernBottomNavigationBar: View {
                     animation: animation
                 ) {
                     // iOS-like spring animation with haptic feedback
-                    withAnimation(.interpolatingSpring(stiffness: 400, damping: 30)) {
+                    withAnimation(Animation.interpolatingSpring(stiffness: 400, damping: 30)) {
                         selectedTab = index
                     }
                     
@@ -60,45 +60,30 @@ struct ModernBottomNavigationBar: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
         .background(
-            // Enhanced floating glass background
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
-                .background(
+            Group {
+                if #available(iOS 26.0, *) {
+                    // Use the new glassEffect when available
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.25),
-                                    Color.white.opacity(0.15)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .overlay(
+                        .fill(.clear)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+                } else {
+                    // Fallback: translucent material or blur-like background
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.5),
-                                    Color.white.opacity(0.3)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                         )
-                )
-                .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
-                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+                }
+            }
         )
         .padding(.horizontal, 24)
         .padding(.bottom, 4)
     }
 }
 
-// MARK: - Floating Tab Button with Enhanced Glass Effect
+// MARK: - Floating Tab Button with Liquid Glass Effect
 struct FloatingTabButton: View {
     let tab: TabItem
     let isSelected: Bool
@@ -108,49 +93,36 @@ struct FloatingTabButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Enhanced glass background for selected state
+                // Background for selected state
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.ultraThinMaterial)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.accentColor.opacity(0.4),
-                                            Color.accentColor.opacity(0.2)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.accentColor.opacity(0.7),
-                                            Color.accentColor.opacity(0.3)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                        )
-                        .frame(width: 48, height: 48)
-                        .matchedGeometryEffect(id: "selectedTab", in: animation)
-                        .shadow(color: .accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .scaleEffect(isSelected ? 1.0 : 0.95)
-                        .animation(.interpolatingSpring(stiffness: 500, damping: 30), value: isSelected)
+                    if #available(iOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(.clear)
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+                            .tint(.accentColor)
+                            .frame(width: 48, height: 48)
+                            .matchedGeometryEffect(id: "selectedTab", in: animation)
+                            .scaleEffect(isSelected ? 1.0 : 0.95)
+                            .animation(Animation.interpolatingSpring(stiffness: 500, damping: 30), value: isSelected)
+                    } else {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 1)
+                            )
+                            .frame(width: 48, height: 48)
+                            .matchedGeometryEffect(id: "selectedTab", in: animation)
+                            .scaleEffect(isSelected ? 1.0 : 0.95)
+                            .animation(Animation.interpolatingSpring(stiffness: 500, damping: 30), value: isSelected)
+                    }
                 }
                 
                 Image(systemName: isSelected ? (tab.selectedIcon ?? tab.icon) : tab.icon)
                     .font(.system(size: 20, weight: isSelected ? .semibold : .medium))
                     .foregroundColor(isSelected ? .accentColor : .primary)
                     .scaleEffect(isSelected ? 1.08 : 1.0)
-                    .animation(.interpolatingSpring(stiffness: 400, damping: 25), value: isSelected)
+                    .animation(Animation.interpolatingSpring(stiffness: 400, damping: 25), value: isSelected)
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
@@ -184,7 +156,7 @@ struct MainContentView<Content: View>: View {
                         .opacity(selectedTab == index ? 1 : 0)
                         .scaleEffect(selectedTab == index ? 1 : 0.98)
                         .offset(y: selectedTab == index ? 0 : 10)
-                        .animation(.interpolatingSpring(stiffness: 300, damping: 30), value: selectedTab)
+                        .animation(Animation.interpolatingSpring(stiffness: 300, damping: 30), value: selectedTab)
                         .zIndex(selectedTab == index ? 1 : 0)
                 }
             }
