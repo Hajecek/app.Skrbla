@@ -532,6 +532,7 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "plikace používá Face ID pro bezpečné ověření vaší identity při návratu z pozadí.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Aplikace potřebuje přístup k mikrofonu pro rozpoznávání řeči při přidávání transakcí.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Aplikace potřebuje rozpoznávání řeči pro analýzu hlasových příkazů při přidávání transakcí.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -566,6 +567,7 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "plikace používá Face ID pro bezpečné ověření vaší identity při návratu z pozadí.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Aplikace potřebuje přístup k mikrofonu pro rozpoznávání řeči při přidávání transakcí.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Aplikace potřebuje rozpoznávání řeči pro analýzu hlasových příkazů při přidávání transakcí.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
