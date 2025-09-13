@@ -95,10 +95,8 @@ struct AuthenticationView: View {
         }
         .onAppear {
             isAnimating = true
-            // Automaticky spustit ověření po zobrazení
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                startAuthentication()
-            }
+            // Automaticky spustit ověření okamžitě po zobrazení
+            startAuthentication()
         }
         .onReceive(authManager.$isAuthenticated) { isAuthenticated in
             if isAuthenticated {
