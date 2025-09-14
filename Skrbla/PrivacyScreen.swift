@@ -8,14 +8,19 @@
 import SwiftUI
 
 struct PrivacyScreen: View {
+    @Environment(\.colorScheme) private var colorScheme
+    
     var body: some View {
         ZStack {
-            // Use a dark background to obscure content
-            Color.black.ignoresSafeArea()
+            // Pozadí: obrázek z Asset Catalogu vyplňující celou plochu
+            Image("PrivacyScreen")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
             
-            // A simple branding element; keep it subtle for snapshots
+            // Subtilní branding pro snapshoty
             VStack(spacing: 12) {
-                Image("Logo")
+                Image(colorScheme == .dark ? "LogoDark" : "Logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 70, height: 70)
@@ -37,5 +42,7 @@ struct PrivacyScreen: View {
 }
 
 #Preview {
-    PrivacyScreen()
+        PrivacyScreen()
+            .preferredColorScheme(.light)
+       
 }
