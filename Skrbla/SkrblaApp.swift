@@ -86,24 +86,3 @@ struct SkrblaApp: App {
         }
     }
 }
-
-// MARK: - Privacy Screen
-private struct PrivacyScreen: View {
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 40, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("Soukromí chráněno")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                Text("Skrbla")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-        }
-        .accessibilityHidden(true)
-    }
-}
