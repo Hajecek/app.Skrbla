@@ -14,6 +14,7 @@ struct SkrblaApp: App {
     @AppStorage("isFirstLaunch") var isFirstLaunch: Bool = true
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var appStateManager = AppStateManager()
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some Scene {
         WindowGroup {
@@ -52,6 +53,13 @@ struct SkrblaApp: App {
                         .transition(.opacity)
                         .zIndex(1000)
                 }
+                
+                // Privacy overlay – jen v reálném pozadí (pro App Switcher snapshot)
+                if appStateManager.isInBackground {
+                    PrivacyScreen()
+                        .transition(.opacity)
+                        .zIndex(2000)
+                }
             }
             .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
                 if shouldRequire {
@@ -76,5 +84,26 @@ struct SkrblaApp: App {
                 }
             }
         }
+    }
+}
+
+// MARK: - Privacy Screen
+private struct PrivacyScreen: View {
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Soukromí chráněno")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("Skrbla")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
