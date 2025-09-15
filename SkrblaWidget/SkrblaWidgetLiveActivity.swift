@@ -31,7 +31,7 @@ struct SkrblaWidgetLiveActivity: Widget {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    VStack(spacing: 4) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Skrbla")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
@@ -40,7 +40,6 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 12))
                             .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding(.leading, 24)
                     
                     Spacer()
                     
@@ -160,6 +159,7 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.leading, 16)
                     .padding(.top, 12)
                 }
                 
@@ -174,6 +174,7 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.trailing, 16)
                     .padding(.top, 12)
                 }
                 
