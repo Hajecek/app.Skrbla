@@ -150,28 +150,30 @@ struct SkrblaWidgetLiveActivity: Widget {
             DynamicIsland {
                 // Expanded UI goes here
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Skrbla")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white)
                         
                         Text("Měsíční přehled")
-                            .font(.system(size: 10))
+                            .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.top, 8)
                 }
                 
                 DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(alignment: .trailing, spacing: 2) {
                         Text("\(context.state.currentAmount, specifier: "%.0f") Kč")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .monospacedDigit()
                         
-                        Text("\(Int((context.state.currentAmount / context.state.monthlyGoal) * 100))% z cíle")
-                            .font(.system(size: 10))
+                        Text("\(Int((context.state.currentAmount / context.state.monthlyGoal) * 100))%")
+                            .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.top, 8)
                 }
                 
                 DynamicIslandExpandedRegion(.bottom) {
@@ -179,11 +181,11 @@ struct SkrblaWidgetLiveActivity: Widget {
                         // Progress bar
                         GeometryReader { geometry in
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: 3)
                                     .fill(Color.white.opacity(0.2))
-                                    .frame(height: 6)
+                                    .frame(height: 4)
                                 
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: 3)
                                     .fill(
                                         LinearGradient(
                                             colors: [.blue, .cyan],
@@ -193,43 +195,46 @@ struct SkrblaWidgetLiveActivity: Widget {
                                     )
                                     .frame(
                                         width: min(geometry.size.width * (context.state.currentAmount / context.state.monthlyGoal), geometry.size.width),
-                                        height: 6
+                                        height: 4
                                     )
                             }
                         }
-                        .frame(height: 6)
+                        .frame(height: 4)
                         
-                        // Last transaction
-                        HStack(spacing: 8) {
+                        // Last transaction - kompaktnější layout
+                        HStack(spacing: 6) {
                             Circle()
                                 .fill(context.state.isPositive ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
-                                .frame(width: 24, height: 24)
+                                .frame(width: 20, height: 20)
                                 .overlay(
                                     Image(systemName: context.state.isPositive ? "plus" : "minus")
-                                        .font(.system(size: 10, weight: .semibold))
+                                        .font(.system(size: 8, weight: .semibold))
                                         .foregroundColor(context.state.isPositive ? .green : .red)
                                 )
                             
-                            VStack(alignment: .leading, spacing: 1) {
+                            VStack(alignment: .leading, spacing: 0) {
                                 Text(context.state.lastTransaction)
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(.white)
                                     .lineLimit(1)
                                 
                                 Text(context.state.category)
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 8))
                                     .foregroundColor(.white.opacity(0.6))
+                                    .lineLimit(1)
                             }
                             
                             Spacer()
                             
                             Text("\(context.state.isPositive ? "+" : "-")\(context.state.lastTransactionAmount, specifier: "%.0f") Kč")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(context.state.isPositive ? .green : .red)
                                 .monospacedDigit()
+                                .lineLimit(1)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
                 }
             } compactLeading: {
                 Circle()
