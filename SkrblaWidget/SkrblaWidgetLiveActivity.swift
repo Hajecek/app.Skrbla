@@ -31,7 +31,7 @@ struct SkrblaWidgetLiveActivity: Widget {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(spacing: 4) {
                         Text("Skrbla")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
@@ -40,6 +40,7 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 12))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.leading, 24)
                     
                     Spacer()
                     
@@ -159,7 +160,7 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                 }
                 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -173,7 +174,7 @@ struct SkrblaWidgetLiveActivity: Widget {
                             .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                 }
                 
                 DynamicIslandExpandedRegion(.bottom) {
