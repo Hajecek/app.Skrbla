@@ -54,6 +54,46 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 20)
                     
+                    // Live Activity sekce
+                    VStack(spacing: 16) {
+                        HStack {
+                            Text("Live Aktivita")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 12) {
+                            Button("▶️ Spustit Live Aktivitu") {
+                                LiveActivityManager.shared.startActivity()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .frame(maxWidth: .infinity)
+
+                            Button("🔄 Aktualizovat Aktivitu") {
+                                LiveActivityManager.shared.updateActivity(
+                                    currentAmount: 15000,
+                                    lastTransaction: "Platba za služby",
+                                    amount: 1200,
+                                    isPositive: false,
+                                    category: "Služby"
+                                )
+                            }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
+
+                            Button("🛑 Ukončit Aktivitu") {
+                                LiveActivityManager.shared.endActivity()
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    
                     // Menu options
                     VStack(spacing: 12) {
                         ProfileMenuRow(
