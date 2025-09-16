@@ -18,7 +18,7 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            VStack(spacing: 20) {
                 // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -54,7 +54,32 @@ struct HomeView: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Otevřít historii výdajů za tento měsíc")
 
-                // Zatím prázdný obsah
+                // 🔹 Tlačítka pro práci s Live Activity
+                VStack(spacing: 12) {
+                    Button("▶️ Spustit Live Aktivitu") {
+                        LiveActivityManager.shared.startActivity()
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("🔄 Aktualizovat Aktivitu") {
+                        LiveActivityManager.shared.updateActivity(
+                            currentAmount: 15000,
+                            lastTransaction: "Platba za služby",
+                            amount: 1200,
+                            isPositive: false,
+                            category: "Služby"
+                        )
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("🛑 Ukončit Aktivitu") {
+                        LiveActivityManager.shared.endActivity()
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                }
+                .padding(.top, 20)
+
                 Spacer()
             }
             // Skrytí systémového navigation baru, aby se nezdvojoval s vlastní hlavičkou

@@ -9,20 +9,7 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-struct SkrblaWidgetAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var currentAmount: Double
-        var monthlyGoal: Double
-        var lastTransaction: String
-        var lastTransactionAmount: Double
-        var isPositive: Bool
-        var category: String
-    }
-
-    // Fixed non-changing properties about your activity go here!
-    var name: String
-}
+// SkrblaWidgetAttributes je definován v LiveActivityManager.swift v hlavním targetu
 
 struct SkrblaWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
