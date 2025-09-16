@@ -45,7 +45,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
-                .padding(.bottom, 20) // zvětšená mezera pod hlavičkou
+                .padding(.bottom, 14) // zmenšená mezera pod hlavičkou, aby karta byla výš
 
                 // Karta s měsíční útratou -> po kliknutí přepne na Historii
                 Button(action: onOpenHistory) {
@@ -108,7 +108,7 @@ private struct MonthlySpendingCard: View {
                 .fill(Color.primary.opacity(0.04))
         )
         .padding(.horizontal, 20)
-        .padding(.top, 12)
+        // .padding(.top, 12) // odstraněno, aby karta byla blíže hlavičce
     }
 
     private var formattedAmount: String {
