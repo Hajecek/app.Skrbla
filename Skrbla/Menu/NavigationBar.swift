@@ -245,22 +245,18 @@ struct iOS26TabContainer: View {
                 HomeView(onOpenHistory: { selectedTab = 2 })
                     .tag(0)
             }
-            Tab("Přidat", systemImage: "plus", value: 1) {
-                AddView()
-                    .tag(1)
-            }
             Tab("Historie", systemImage: "clock", value: 2) {
                 HistoryView()
-                    .tag(2)
+                    .tag(1)
             }
             Tab("Profil", systemImage: "person", value: 3) {
                 ProfileView()
-                    .tag(3)
+                    .tag(2)
             }
             // Volitelný systémově oddělený Search tab (smazat, pokud ho nechceš)
-            Tab("Hledat", systemImage: "magnifyingglass", value: 4, role: .search) {
+            Tab("Hledat", systemImage: "plus", value: 4, role: .search) {
                 ProfileView()
-                    .tag(4)
+                    .tag(3)
             }
         }
         .tabViewStyle(.sidebarAdaptable)
