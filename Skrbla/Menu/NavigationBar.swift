@@ -196,7 +196,7 @@ private struct RoundGlassButton: View {
     }
 }
 
-// MARK: - Main Content View with Floating Navigation
+// MARK: - Main Content View with Floating Navigation (Fallback for iOS < 26)
 struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
     let tabs: [TabItem]
@@ -234,22 +234,55 @@ struct MainContentView<Content: View>: View {
     }
 }
 
-// MARK: - Preview
-#Preview {
-    MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
-        switch selectedIndex {
-        case 0:
-            HomeView(onOpenHistory: { onSelectTab(2) })
-        case 1:
-            AddView()
-        case 2:
-            HistoryView()
-        case 3:
-            ProfileView()
-        default:
-            HomeView(onOpenHistory: { onSelectTab(2) })
+// MARK: - iOS 26+ Native Tab Container
+@available(iOS 26.0, *)
+struct iOS26TabContainer: View {
+    @State private var selectedTab: Int = 0
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Domů", systemImage: "house", value: 0) {
+                HomeView(onOpenHistory: { selectedTab = 2 })
+                    .tag(0)
+            }
+            Tab("Přidat", systemImage: "plus", value: 1) {
+                AddView()
+                    .tag(1)
+            }
+            Tab("Historie", systemImage: "clock", value: 2) {
+                HistoryView()
+                    .tag(2)
+            }
+            Tab("Profil", systemImage: "person", value: 3) {
+                ProfileView()
+                    .tag(3)
+            }
         }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        // Accessory (mini player) was removed as requested
     }
-    .preferredColorScheme(.dark)
 }
 
+// MARK: - Preview
+#Preview {
+    if #available(iOS 26.0, *) {
+        iOS26TabContainer()
+            .preferredColorScheme(.dark)
+    } else {
+        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
+            switch selectedIndex {
+            case 0:
+                HomeView(onOpenHistory: { onSelectTab(2) })
+            case 1:
+                AddView()
+            case 2:
+                HistoryView()
+            case 3:
+                ProfileView()
+            default:
+                HomeView(onOpenHistory: { onSelectTab(2) })
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}

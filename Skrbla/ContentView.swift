@@ -12,18 +12,26 @@ struct ContentView: View {
     @EnvironmentObject var appStateManager: AppStateManager
     
     var body: some View {
-        MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
-            switch selectedIndex {
-            case 0:
-                HomeView(onOpenHistory: { onSelectTab(2) })
-            case 1:
-                AddView()
-            case 2:
-                HistoryView()
-            case 3:
-                ProfileView()
-            default:
-                HomeView(onOpenHistory: { onSelectTab(2) })
+        Group {
+            if #available(iOS 26.0, *) {
+                // Native iOS 26 TabView s mini playerem nad tab barem
+                iOS26TabContainer()
+            } else {
+                // Fallback: vlastní kapslový bar
+                MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
+                    switch selectedIndex {
+                    case 0:
+                        HomeView(onOpenHistory: { onSelectTab(2) })
+                    case 1:
+                        AddView()
+                    case 2:
+                        HistoryView()
+                    case 3:
+                        ProfileView()
+                    default:
+                        HomeView(onOpenHistory: { onSelectTab(2) })
+                    }
+                }
             }
         }
         .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
@@ -39,4 +47,3 @@ struct ContentView: View {
         .environmentObject(AuthenticationManager())
         .environmentObject(AppStateManager())
 }
-
