@@ -257,9 +257,115 @@ struct iOS26TabContainer: View {
                 ProfileView()
                     .tag(3)
             }
+            // If you want a system-separated Search tab instead of accessory button, uncomment:
+            
+            Tab("Hledat", systemImage: "magnifyingglass", value: 4, role: .search) {
+                ProfileView()
+                    .tag(4)
+            }
+            
         }
+        .tabViewStyle(.sidebarAdaptable)
         .tabBarMinimizeBehavior(.onScrollDown)
-        // Accessory (mini player) was removed as requested
+        .tabViewBottomAccessory {
+            // Center: global action (Plus)
+            PlusAccessoryView {
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                selectedTab = 1 // přepnout na "Přidat"
+            }
+            // Right-aligned lupa inside the same accessory row
+            HStack {
+                Spacer(minLength: 0)
+                SearchAccessoryButton {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    // Navigate to search if you have a tab, or present a search sheet
+                    // selectedTab = 4
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Plus Accessory (attached accessory above tab bar)
+struct PlusAccessoryView: View {
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text("Přidat")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(
+                Group {
+                    if #available(iOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.clear)
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
+                    }
+                }
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Přidat položku")
+        .accessibilityHint("Přepnout na záložku Přidat")
+    }
+}
+
+// MARK: - Search Accessory Button (right-aligned lupa)
+struct SearchAccessoryButton: View {
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
+                .padding(10)
+                .background(
+                    Group {
+                        if #available(iOS 26.0, *) {
+                            Circle()
+                                .fill(.clear)
+                                .glassEffect(.regular, in: Circle())
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
+                        } else {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
+                        }
+                    }
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Hledat")
     }
 }
 
