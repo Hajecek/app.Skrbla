@@ -49,6 +49,8 @@ struct ModernBottomNavigationBar: View {
     private let spacingBetweenPillAndButton: CGFloat = 12
     private let roundButtonSize: CGFloat = 64
     
+    private var tabColor: Color { Color("TabColor") }
+    
     var body: some View {
         HStack(spacing: spacingBetweenPillAndButton) {
             // Main capsule container with tabs
@@ -59,7 +61,8 @@ struct ModernBottomNavigationBar: View {
                         isSelected: selectedTab == index,
                         animation: animation,
                         bubbleSize: CGSize(width: bubbleWidth, height: bubbleHeight),
-                        iconSize: iconSize
+                        iconSize: iconSize,
+                        tabColor: tabColor
                     ) {
                         withAnimation(.interpolatingSpring(stiffness: 520, damping: 32)) {
                             selectedTab = index
@@ -80,7 +83,12 @@ struct ModernBottomNavigationBar: View {
                             .glassEffect(.regular, in: Capsule())
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                                    .fill(tabColor.opacity(0.18)) // jemné tónování pozadí pilulky barvou z Assets
+                                    .clipShape(Capsule())
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(tabColor.opacity(0.22), lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
                     } else {
@@ -88,7 +96,12 @@ struct ModernBottomNavigationBar: View {
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                    .fill(tabColor.opacity(0.16)) // jemné tónování pilulky
+                                    .clipShape(Capsule())
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(tabColor.opacity(0.22), lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
                     }
@@ -97,12 +110,13 @@ struct ModernBottomNavigationBar: View {
             .contentShape(Capsule())
             
             // Separate round glass button (plus)
-            RoundGlassButton(size: roundButtonSize, systemImage: "plus") {
+            RoundGlassButton(size: roundButtonSize, systemImage: "plus", tabColor: tabColor) {
                 UIImpactFeedbackGenerator(style: .soft).impactOccurred()
             }
         }
         .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 8)
+        .tint(tabColor) // použijeme TabColor jako accent/tint
         .ignoresSafeArea(edges: .bottom)
     }
 }
@@ -114,6 +128,7 @@ private struct CapsuleTabButton: View {
     let animation: Namespace.ID
     let bubbleSize: CGSize
     let iconSize: CGFloat
+    let tabColor: Color
     let action: () -> Void
     
     var body: some View {
@@ -124,7 +139,14 @@ private struct CapsuleTabButton: View {
                         Capsule()
                             .fill(.clear)
                             .glassEffect(.regular, in: Capsule())
-                            .tint(.accentColor)
+                            .overlay(
+                                Capsule()
+                                    .fill(tabColor.opacity(0.22))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(tabColor.opacity(0.35), lineWidth: 1)
+                            )
                             .frame(width: bubbleSize.width, height: bubbleSize.height)
                             .matchedGeometryEffect(id: "selectedTabBubble", in: animation)
                             .animation(.interpolatingSpring(stiffness: 560, damping: 34), value: isSelected)
@@ -133,7 +155,11 @@ private struct CapsuleTabButton: View {
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 1)
+                                    .fill(tabColor.opacity(0.20))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(tabColor.opacity(0.35), lineWidth: 1)
                             )
                             .frame(width: bubbleSize.width, height: bubbleSize.height)
                             .matchedGeometryEffect(id: "selectedTabBubble", in: animation)
@@ -143,7 +169,7 @@ private struct CapsuleTabButton: View {
                 
                 Image(systemName: isSelected ? (tab.selectedIcon ?? tab.icon) : tab.icon)
                     .font(.system(size: iconSize, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? .accentColor : .white)
+                    .foregroundColor(isSelected ? tabColor : .white)
                     .scaleEffect(isSelected ? 1.06 : 1.0)
                     .animation(.interpolatingSpring(stiffness: 480, damping: 28), value: isSelected)
                     .contentTransition(.symbolEffect(.replace))
@@ -161,6 +187,7 @@ private struct CapsuleTabButton: View {
 private struct RoundGlassButton: View {
     let size: CGFloat
     let systemImage: String
+    let tabColor: Color
     let action: () -> Void
     
     var body: some View {
@@ -172,7 +199,11 @@ private struct RoundGlassButton: View {
                         .glassEffect(.regular, in: Circle())
                         .overlay(
                             Circle()
-                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                                .fill(tabColor.opacity(0.20)) // tónování kruhu TabColor
+                        )
+                        .overlay(
+                            Circle()
+                                .strokeBorder(tabColor.opacity(0.28), lineWidth: 1)
                         )
                         .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
                 } else {
@@ -180,7 +211,11 @@ private struct RoundGlassButton: View {
                         .fill(.ultraThinMaterial)
                         .overlay(
                             Circle()
-                                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                .fill(tabColor.opacity(0.18))
+                        )
+                        .overlay(
+                            Circle()
+                                .strokeBorder(tabColor.opacity(0.28), lineWidth: 1)
                         )
                         .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
                 }
@@ -261,7 +296,9 @@ struct iOS26TabContainer: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .tabBarMinimizeBehavior(.onScrollDown)
-        // Accessory (container nad tabem) byl kompletně odstraněn
+        .toolbarBackground(Color("TabColor"), for: .tabBar) // Pozadí tabbaru z Assets
+        .toolbarBackground(.visible, for: .tabBar)
+        .tint(Color("TabColor")) // zvýraznění aktivní ikony a dalších akcentů
     }
 }
 
