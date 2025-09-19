@@ -15,52 +15,76 @@ struct HomeView: View {
     
     // Callback, který přepne tab na Historii (předává ContentView)
     var onOpenHistory: () -> Void = {}
+    
+    // Laditelné konstanty pro výšku zeleného pozadí
+    private let headerHeight: CGFloat = 44 /* titulek + podtitulek + odskoky */
+    private let headerTopPadding: CGFloat = 12
+    private let headerBottomPadding: CGFloat = 14
+    private let cardEstimatedHeight: CGFloat = 120 /* přibližná výška MonthlySpendingCard včetně vnitřních paddingů */
+    private let verticalSpacingBetweenHeaderAndCard: CGFloat = 20
+    private let horizontalPadding: CGFloat = 20
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Vítej zpátky 👋")
-                            .font(.largeTitle.weight(.bold)) // hlavní Apple font (SF)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+            ZStack(alignment: .top) {
+                // Zelené pozadí od horního okraje po spodní hranu karty
+                GradientBackground()
+                    .frame(height: greenBackgroundHeight)
+                    .ignoresSafeArea(edges: .top)
+                
+                VStack(spacing: 20) {
+                    // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Vítej zpátky 👋")
+                                .font(.largeTitle.weight(.bold)) // hlavní Apple font (SF)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
 
-                        Text("Rád tě zase vidím")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            Text("Rád tě zase vidím")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            // Akce profilu
+                        } label: {
+                            ProfileBadge(size: 44, symbolSize: 22)
+                        }
+                        .accessibilityLabel("Profil")
                     }
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, headerTopPadding)
+                    .padding(.bottom, headerBottomPadding) // zmenšená mezera pod hlavičkou, aby karta byla výš
+
+                    // Karta s měsíční útratou -> po kliknutí přepne na Historii
+                    Button(action: onOpenHistory) {
+                        MonthlySpendingCard(amount: monthlySpent, currencyCode: Locale.current.currency?.identifier)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Otevřít historii výdajů za tento měsíc")
 
                     Spacer()
-
-                    Button {
-                        // Akce profilu
-                    } label: {
-                        ProfileBadge(size: 44, symbolSize: 22)
-                    }
-                    .accessibilityLabel("Profil")
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 14) // zmenšená mezera pod hlavičkou, aby karta byla výš
-
-                // Karta s měsíční útratou -> po kliknutí přepne na Historii
-                Button(action: onOpenHistory) {
-                    MonthlySpendingCard(amount: monthlySpent, currencyCode: Locale.current.currency?.identifier)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint("Otevřít historii výdajů za tento měsíc")
-
-                Spacer()
             }
             // Skrytí systémového navigation baru, aby se nezdvojoval s vlastní hlavičkou
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .background(.background)
         }
+    }
+    
+    // Výpočet výšky zeleného pozadí tak, aby pokrylo banner + mezeru + kartu
+    private var greenBackgroundHeight: CGFloat {
+        // Odhad: horní padding + (vizuální) výška banneru + spodní padding + mezera + výška karty + horizontální okraje karty
+        // Karta má vlastní .padding(.horizontal, 20), ale výšku to neovlivní – přidáme malou rezervu pro bezpečí.
+        let bannerApproxHeight = headerHeight + headerTopPadding + headerBottomPadding
+        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 70 /* rezerva */
+        return total
     }
 }
 
@@ -149,6 +173,23 @@ private struct ProfileBadge: View {
                 .foregroundStyle(.tint)
         }
         .contentShape(Circle())
+    }
+}
+
+// MARK: - Gradient Background (zelený přechod pro horní část)
+private struct GradientBackground: View {
+    @Environment(\.colorScheme) private var scheme
+    
+    var body: some View {
+        let top = Color.green.opacity(scheme == .dark ? 0.35 : 0.25)
+        let mid = Color.green.opacity(scheme == .dark ? 0.22 : 0.16)
+        let clear = Color.green.opacity(0.0)
+        
+        LinearGradient(
+            colors: [top, mid, clear],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
 
