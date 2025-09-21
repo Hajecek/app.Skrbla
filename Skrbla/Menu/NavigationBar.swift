@@ -479,14 +479,6 @@ private struct PlusQuickActionsSheet: View {
                     })
                 }
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Přidat")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Hotovo") { dismiss() }
-                }
-            }
         }
     }
     
