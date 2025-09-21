@@ -29,18 +29,32 @@ struct HomeView: View {
     @State private var backgroundReveal: CGFloat = 0
     @State private var backgroundOpacity: CGFloat = 0
     @State private var gradientOffset: CGFloat = -24
+    @State private var maskReveal: CGFloat = 0 // 0..1 pro wipe masku
+
+    // Animace hlavičky
+    @State private var headerOpacity: CGFloat = 0
+    @State private var headerOffsetY: CGFloat = 8
 
     // Animace karty
     @State private var cardOpacity: CGFloat = 0
-    @State private var cardScale: CGFloat = 0.96
+    @State private var cardScale: CGFloat = 0.94
+    @State private var cardShadowBoost: CGFloat = 1 // násobič stínu při příjezdu
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Zelené pozadí s příjezdovou animací (výška + opacita + jemný parallax offset)
+                // Zelené pozadí s příjezdovou animací (výška + opacita + parallax) a obloukovou maskou dole
                 GradientBackground(opacity: backgroundOpacity)
                     .frame(height: backgroundReveal)
                     .offset(y: gradientOffset)
+                    .mask(
+                        RoundedBottomMask(
+                            revealProgress: maskReveal,
+                            curveHeight: 36,     // jak hluboký oblouk (laditelné)
+                            cornerRadius: 20     // jemné zaoblení rohů (laditelné)
+                        )
+                        .padding(.top, -60) // rezerva, aby se při větším oblouku nic neuseklo
+                    )
                     .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
                 
@@ -72,6 +86,8 @@ struct HomeView: View {
                     .padding(.horizontal, horizontalPadding)
                     .padding(.top, headerTopPadding)
                     .padding(.bottom, headerBottomPadding)
+                    .opacity(headerOpacity)
+                    .offset(y: headerOffsetY)
 
                     // Karta s měsíční útratou -> po kliknutí přepne na Historii
                     Button(action: onOpenHistory) {
@@ -82,6 +98,9 @@ struct HomeView: View {
                         )
                         .opacity(cardOpacity)
                         .scaleEffect(cardScale, anchor: .top)
+                        .shadow(color: Color.black.opacity(0.08 * cardShadowBoost),
+                                radius: 12 * cardShadowBoost,
+                                x: 0, y: 6 * cardShadowBoost)
                     }
                     .buttonStyle(.plain)
                     .padding(.top, verticalSpacingBetweenHeaderAndCard)
@@ -98,25 +117,42 @@ struct HomeView: View {
                 // Reset pro případ návratu na obrazovku
                 backgroundReveal = 0
                 backgroundOpacity = 0
-                gradientOffset = -24
+                gradientOffset = -28
+                maskReveal = 0
+
+                headerOpacity = 0
+                headerOffsetY = 8
+
                 cardOpacity = 0
-                cardScale = 0.96
+                cardScale = 0.94
+                cardShadowBoost = 1.2
                 
-                // 1) Gradient – výška (spring) + opacita (ease)
+                // 1) Gradient – výška (spring) + opacita (ease) + parallax offset
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.9, blendDuration: 0.2)) {
                     backgroundReveal = greenBackgroundHeight
                 }
-                withAnimation(.easeOut(duration: 0.38).delay(0.03)) {
+                withAnimation(.easeOut(duration: 0.38).delay(0.02)) {
                     backgroundOpacity = 1
                 }
-                // 2) Gradient – jemný posun dolů pro parallax dojem
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.88, blendDuration: 0.2).delay(0.02)) {
                     gradientOffset = 0
                 }
-                // 3) Karta – fade + scale s malým zpožděním za gradientem
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.92, blendDuration: 0.2).delay(0.12)) {
+                // 2) Gradient – wipe maska (oblouk)
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.92, blendDuration: 0.2).delay(0.03)) {
+                    maskReveal = 1
+                }
+                // 3) Hlavička – fade + slide
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.95, blendDuration: 0.2).delay(0.08)) {
+                    headerOpacity = 1
+                    headerOffsetY = 0
+                }
+                // 4) Karta – pop efekt: fade + scale, poté jemné dosednutí (shadow boost -> normal)
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.88, blendDuration: 0.2).delay(0.14)) {
                     cardOpacity = 1
                     cardScale = 1.0
+                }
+                withAnimation(.easeOut(duration: 0.35).delay(0.28)) {
+                    cardShadowBoost = 1.0
                 }
             }
         }
@@ -127,6 +163,51 @@ struct HomeView: View {
         let bannerApproxHeight = headerHeight + headerTopPadding + headerBottomPadding
         let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 60 /* rezerva */
         return total
+    }
+}
+
+// MARK: - Zaoblená maska s obloukem do ztracena
+private struct RoundedBottomMask: View {
+    // 0..1 – jak moc je maska “otevřená” (pro wipe animaci)
+    var revealProgress: CGFloat
+    // Výška oblouku (amplituda křivky)
+    var curveHeight: CGFloat
+    // Zaoblení rohů nahoře (jemné)
+    var cornerRadius: CGFloat
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = geo.size.height
+            let visibleHeight = max(0, min(height, height * revealProgress))
+            let arcDepth = min(curveHeight, max(0, visibleHeight)) // bezpečnost, aby oblouk nebyl větší než výška
+
+            Path { path in
+                // Začneme vlevo nahoře (s malým zaoblením)
+                path.move(to: CGPoint(x: 0, y: 0 + cornerRadius))
+                path.addQuadCurve(
+                    to: CGPoint(x: cornerRadius, y: 0),
+                    control: CGPoint(x: 0, y: 0)
+                )
+                // Horní hrana
+                path.addLine(to: CGPoint(x: width - cornerRadius, y: 0))
+                path.addQuadCurve(
+                    to: CGPoint(x: width, y: cornerRadius),
+                    control: CGPoint(x: width, y: 0)
+                )
+                // Pravý svislý okraj až k oblouku
+                path.addLine(to: CGPoint(x: width, y: visibleHeight - arcDepth))
+                // Spodní oblouk (do ztracena)
+                path.addQuadCurve(
+                    to: CGPoint(x: 0, y: visibleHeight - arcDepth),
+                    control: CGPoint(x: width / 2, y: visibleHeight + arcDepth)
+                )
+                // Levý svislý okraj zpět nahoru
+                path.addLine(to: CGPoint(x: 0, y: cornerRadius))
+                path.closeSubpath()
+            }
+            .fill(Color.white)
+        }
     }
 }
 
