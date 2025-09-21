@@ -307,6 +307,7 @@ struct iOS26TabContainer: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        // Integrace accessory při sbalení tab baru během scrollu
         .tabBarMinimizeBehavior(.onScrollDown)
         .toolbarBackground(Color("TabColor"), for: .tabBar) // Pozadí tabbaru z Assets
         .toolbarBackground(.visible, for: .tabBar)
@@ -325,8 +326,6 @@ struct iOS26TabContainer: View {
 }
 
 // MARK: - Search Accessory Button (right-aligned lupa)
-// Ponecháno zde jen pro případné budoucí použití mimo accessory.
-// Pokud ho nechceš vůbec, můžeš smazat i tento typ.
 struct SearchAccessoryButton: View {
     var action: () -> Void
     

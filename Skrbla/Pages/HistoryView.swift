@@ -13,11 +13,7 @@ struct HistoryView: View {
     private let filters = ["Vše", "Dnes", "Tento týden", "Tento měsíc"]
     
     var body: some View {
-        ZStack {
-            // Background
-            Color.black
-                .ignoresSafeArea()
-            
+        ScrollView {
             VStack(spacing: 0) {
                 // Header
                 HStack {
@@ -37,7 +33,7 @@ struct HistoryView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
                 
-                // Filter tabs
+                // Filter tabs (horizontální scroll uvnitř hlavního svislého scrollu je OK)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(Array(filters.enumerated()), id: \.offset) { index, filter in
@@ -56,17 +52,18 @@ struct HistoryView: View {
                 .padding(.top, 20)
                 
                 // History list
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(0..<10) { index in
-                            HistoryItemCard(index: index)
-                        }
+                LazyVStack(spacing: 12) {
+                    ForEach(0..<30) { index in
+                        HistoryItemCard(index: index)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 24)
             }
         }
+        .scrollIndicators(.automatic)
+        .background(Color.black.ignoresSafeArea())
     }
 }
 
