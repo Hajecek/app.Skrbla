@@ -11,6 +11,7 @@ import SwiftUI
 struct SkrblaApp: App {
     @State private var showLaunchScreen = true
     @State private var showAuthentication = false
+    @State private var didFinishOnboarding = false
     @AppStorage("isFirstLaunch") var isFirstLaunch: Bool = true
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var appStateManager = AppStateManager()
@@ -19,7 +20,7 @@ struct SkrblaApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // Main app content - zobrazit pouze pokud je uživatel ověřen
+                // 1) Hlavní obsah – jen pokud je ověřen a není aktivní autentizační overlay
                 if authManager.isAuthenticated && !showAuthentication {
                     ContentView()
                         .opacity(showLaunchScreen ? 0 : 1)
@@ -28,33 +29,64 @@ struct SkrblaApp: App {
                         .environmentObject(appStateManager)
                 }
                 
-                // Launch screen - zobrazit pouze při prvním spuštění
+                // 2) LoginView – pouze při prvním spuštění po dokončení onboardingu
+                if isFirstLaunch &&
+                    didFinishOnboarding &&
+                    !authManager.isAuthenticated &&
+                    !showLaunchScreen &&
+                    !showAuthentication &&
+                    !appStateManager.shouldRequireAuth {
+                    LoginView(authManager: authManager)
+                        .transition(.opacity)
+                        .environmentObject(appStateManager)
+                }
+                
+                // 3) Launch screen – krátce při startu
                 if showLaunchScreen && !showAuthentication && !appStateManager.shouldRequireAuth {
                     LaunchView()
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     showLaunchScreen = false
-                                    showAuthentication = true
+                                    // Po launchi: pokud je vyžadováno ověření z pozadí, zobraz auth overlay
+                                    if appStateManager.shouldRequireAuth {
+                                        showAuthentication = true
+                                    } else {
+                                        // Pokud už to není první spuštění a nejsme ověřeni, rovnou zobraz biometriku
+                                        if !isFirstLaunch && !authManager.isAuthenticated {
+                                            showAuthentication = true
+                                        }
+                                    }
                                 }
                             }
                         }
                 }
                 
-                // Onboarding
-                if isFirstLaunch && !showAuthentication && !showLaunchScreen && !appStateManager.shouldRequireAuth {
-                    OnboardingView()
-                        .transition(.opacity)
+                // 4) Onboarding – jen při prvním spuštění, po launchi, dokud není dokončen
+                if isFirstLaunch &&
+                    !didFinishOnboarding &&
+                    !showAuthentication &&
+                    !showLaunchScreen &&
+                    !appStateManager.shouldRequireAuth {
+                    OnboardingView {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            didFinishOnboarding = true
+                        }
+                    }
+                    .transition(.opacity)
                 }
                 
-                // Authentication overlay - zobrazit při prvním spuštění nebo při návratu z pozadí
-                if showAuthentication || appStateManager.shouldRequireAuth {
+                // 5) Biometrická autentizace – při návratu z pozadí, explicitně vyžádaná,
+                // a také při startu po prvním spuštění, pokud nejsme ověřeni.
+                if showAuthentication ||
+                    appStateManager.shouldRequireAuth ||
+                    (!isFirstLaunch && !authManager.isAuthenticated && !showLaunchScreen) {
                     AuthenticationView(authManager: authManager)
                         .transition(.opacity)
                         .zIndex(1000)
                 }
                 
-                // Privacy overlay – jen v reálném pozadí (pro App Switcher snapshot)
+                // 6) Privacy overlay – pro skutečné pozadí (App Switcher snapshot)
                 if appStateManager.isInBackground {
                     PrivacyScreen()
                         .transition(.opacity)
@@ -63,7 +95,6 @@ struct SkrblaApp: App {
             }
             .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
                 if shouldRequire {
-                    // Při návratu z pozadí - vždy zobrazit ověření
                     print("🔄 Návrat z pozadí - vyžaduje se ověření")
                     authManager.requireAuthentication()
                     showAuthentication = true
@@ -73,12 +104,12 @@ struct SkrblaApp: App {
             .onReceive(authManager.$isAuthenticated) { isAuthenticated in
                 if isAuthenticated {
                     print("✅ Ověření úspěšné - přesměrovávám")
-                    // Pouze 0.5 sekundy success animace a pak přesměrovat
+                    // Po úspěšném přihlášení v LoginView se nastaví isFirstLaunch = false (v LoginView),
+                    // čímž se při dalším spuštění vynechá Onboarding i Login a zobrazí se biometrika.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showAuthentication = false
                         }
-                        // Resetovat stav pozadí
                         appStateManager.resetBackgroundState()
                     }
                 }

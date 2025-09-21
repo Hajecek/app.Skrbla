@@ -5,6 +5,9 @@
 import SwiftUI
 
 struct OnboardingView: View {
+    // New: completion callback
+    var onFinish: () -> Void = {}
+
     /// View Properties
     @State private var activeCard: Card? = cards.first
     @State private var scrollPosition: ScrollPosition = .init()
@@ -13,6 +16,7 @@ struct OnboardingView: View {
     @State private var initialAnimation: Bool = false
     @State private var titleProgress: CGFloat = 0
     @State private var scrollPhase: ScrollPhase = .idle
+
     var body: some View {
         ZStack {
             /// Ambient Background View
@@ -69,9 +73,9 @@ struct OnboardingView: View {
                 }
                 
                 Button {
-                    /// Zrušíme timer a ukončíme onboarding
+                    // Zrušit timer a nahlásit dokončení onboarding
                     timer.upstream.connect().cancel()
-                    UserDefaults.standard.set(false, forKey: "isFirstLaunch")
+                    onFinish()
                 } label: {
                     Text("Začni spravovat finance")
                         .fontWeight(.semibold)
@@ -108,13 +112,11 @@ struct OnboardingView: View {
             
             ZStack {
                 ForEach(cards) { card in
-                    /// You can use downsized image for this, but for the video tutorial purpose, I'm going to use the actual Image!
                     Image(card.image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .ignoresSafeArea()
                         .frame(width: size.width, height: size.height)
-                        /// Only Showing active Card Image
                         .opacity(activeCard?.id == card.id ? 1 : 0)
                 }
                 
@@ -128,7 +130,6 @@ struct OnboardingView: View {
         }
     }
     
-    /// Carousel Card View
     @ViewBuilder
     private func CarouselCardView(_ card: Card) -> some View {
         GeometryReader {

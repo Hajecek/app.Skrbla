@@ -63,7 +63,6 @@
 		073225D42E7831E20092FA89 /* Exceptions for "Skrbla" folder in "SkrblaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Auth/LoginView.swift,
 				LiveActivityManager.swift,
 			);
 			target = 07906B612E723CE300F865B6 /* SkrblaWidgetExtension */;
