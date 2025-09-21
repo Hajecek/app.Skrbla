@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var appStateManager: AppStateManager
+    // Injectujeme FinanceStore do celé hierarchie
+    @StateObject private var financeStore = FinanceStore()
     
     var body: some View {
         Group {
@@ -34,6 +36,7 @@ struct ContentView: View {
                 }
             }
         }
+        .environmentObject(financeStore)
         .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
             if shouldRequire {
                 authManager.requireAuthentication()
@@ -47,3 +50,4 @@ struct ContentView: View {
         .environmentObject(AuthenticationManager())
         .environmentObject(AppStateManager())
 }
+

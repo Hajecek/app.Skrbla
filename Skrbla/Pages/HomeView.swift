@@ -9,9 +9,8 @@ import SwiftUI
 
 // MARK: - Home View
 struct HomeView: View {
-    // Placeholder hodnoty – později napoj na reálná data
-    @State private var monthlySpent: Decimal = 12345.67
-    @State private var monthlyBudget: Decimal = 20000 // TODO: nahradit reálným zdrojem rozpočtu
+    // Sdílený zdroj pravdy – hodnoty jdou do karty i do tabbar accessory
+    @EnvironmentObject var finance: FinanceStore
     @Environment(\.locale) private var locale
     
     // Callback, který přepne tab na Historii (předává ContentView)
@@ -92,9 +91,9 @@ struct HomeView: View {
                     // Karta s měsíční útratou -> po kliknutí přepne na Historii
                     Button(action: onOpenHistory) {
                         MonthlySpendingCard(
-                            amount: monthlySpent,
-                            budget: monthlyBudget,
-                            currencyCode: Locale.current.currency?.identifier
+                            amount: finance.monthlySpent,
+                            budget: finance.monthlyBudget,
+                            currencyCode: finance.currencyCode
                         )
                         .opacity(cardOpacity)
                         .scaleEffect(cardScale, anchor: .top)
@@ -328,4 +327,6 @@ private struct GradientBackground: View {
 
 #Preview {
     HomeView(onOpenHistory: {})
+        .environmentObject(FinanceStore())
 }
+

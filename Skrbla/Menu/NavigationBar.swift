@@ -266,13 +266,11 @@ struct MainContentView<Content: View>: View {
         // Bottom accessory mimic for iOS < 26: show everywhere except Home (index 0)
         .overlay(alignment: .bottom) {
             if selectedTab != 0 {
-                // Position just above our custom bar
-                SearchAccessoryButton {
-                    // TODO: přidej konkrétní navigaci/akci
-                }
-                .padding(.bottom, 84) // height of bar + spacing to float above
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(.spring(response: 0.36, dampingFraction: 0.86), value: selectedTab)
+                MonthlySpentAccessory()
+                    .padding(.horizontal, 24) // align with bar's outer horizontal padding
+                    .padding(.bottom, 84) // height of bar + spacing to float above
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.36, dampingFraction: 0.86), value: selectedTab)
             }
         }
         .overlay(alignment: .bottom) {
@@ -315,51 +313,44 @@ struct iOS26TabContainer: View {
         // Native bottom accessory: show on all tabs except Home (index 0)
         .tabViewBottomAccessory {
             if selectedTab != 0 {
-                SearchAccessoryButton {
-                    // TODO: přidej konkrétní navigaci/akci
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 4)
+                MonthlySpentAccessory()
+                    .padding(.horizontal, 12) // accessory content inset within the tab bar
+                    .padding(.top, 4)
             }
         }
     }
 }
 
-// MARK: - Search Accessory Button (right-aligned lupa)
-struct SearchAccessoryButton: View {
-    var action: () -> Void
+// MARK: - Monthly Spent Accessory (icon left, bigger amount right, full width)
+struct MonthlySpentAccessory: View {
+    @EnvironmentObject var finance: FinanceStore
+    
+    private func formattedAmount(_ value: Decimal, code: String) -> String {
+        value.asDouble.formatted(.currency(code: code))
+    }
     
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .semibold))
+        HStack(spacing: 12) {
+            // Left icon
+            Image(systemName: "creditcard.fill")
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.primary)
-                .padding(10)
-                .background(
-                    Group {
-                        if #available(iOS 26.0, *) {
-                            Circle()
-                                .fill(.clear)
-                                .glassEffect(.regular, in: Circle())
-                                .overlay(
-                                    Circle()
-                                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-                                )
-                                .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
-                        } else {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    Circle()
-                                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                                .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
-                        }
-                    }
-                )
+            
+            Spacer(minLength: 0)
+            
+            // Right amount (slightly larger)
+            Text(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
+                .font(.system(size: 17, weight: .semibold)) // larger than before
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Hledat")
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Utraceno tento měsíc")
+        .accessibilityValue(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
     }
 }
 
@@ -368,6 +359,7 @@ struct SearchAccessoryButton: View {
     if #available(iOS 26.0, *) {
         iOS26TabContainer()
             .preferredColorScheme(.dark)
+            .environmentObject(FinanceStore())
     } else {
         MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
             switch selectedIndex {
@@ -384,5 +376,7 @@ struct SearchAccessoryButton: View {
             }
         }
         .preferredColorScheme(.dark)
+        .environmentObject(FinanceStore())
     }
 }
+
