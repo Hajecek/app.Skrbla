@@ -20,42 +20,76 @@ struct HomeView: View {
     private let headerHeight: CGFloat = 44 /* titulek + podtitulek + odskoky */
     private let headerTopPadding: CGFloat = 12
     private let headerBottomPadding: CGFloat = 8
-    private let cardEstimatedHeight: CGFloat = 112 /* karta je jednodušší, ale vyšší kvůli iOS spacingu */
-    private let verticalSpacingBetweenHeaderAndCard: CGFloat = 16
+    private let cardEstimatedHeight: CGFloat = 118 /* karta trochu vyšší kvůli novému layoutu */
+    private let verticalSpacingBetweenHeaderAndCard: CGFloat = 18
     private let horizontalPadding: CGFloat = 20
 
     // Animace horního zeleného pozadí
-    @State private var backgroundReveal: CGFloat = 0
+    @State private var backgroundHeight: CGFloat = 0
     @State private var backgroundOpacity: CGFloat = 0
-    @State private var gradientOffset: CGFloat = -24
-    @State private var maskReveal: CGFloat = 0 // 0..1 pro wipe masku
+    @State private var backgroundOffsetY: CGFloat = -24
+    @State private var backgroundPulse: CGFloat = 0 // 0..1 pulsace
 
     // Animace hlavičky
     @State private var headerOpacity: CGFloat = 0
-    @State private var headerOffsetY: CGFloat = 8
+    @State private var headerOffsetY: CGFloat = 10
+    @State private var headerTilt: CGFloat = 5 // deg
 
     // Animace karty
     @State private var cardOpacity: CGFloat = 0
-    @State private var cardScale: CGFloat = 0.94
-    @State private var cardShadowBoost: CGFloat = 1 // násobič stínu při příjezdu
+    @State private var cardScale: CGFloat = 0.93
+    @State private var cardShadowBoost: CGFloat = 1.12 // násobič stínu při příjezdu
+    @State private var showSheen: Bool = false
 
+    // Jemný parallax podle polohy kurzoru/dotyku (bez CoreMotion)
+    @State private var parallax: CGSize = .zero
+    
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Zelené pozadí s příjezdovou animací (výška + opacita + parallax) a obloukovou maskou dole
-                GradientBackground(opacity: backgroundOpacity)
-                    .frame(height: backgroundReveal)
-                    .offset(y: gradientOffset)
-                    .mask(
-                        RoundedBottomMask(
-                            revealProgress: maskReveal,
-                            curveHeight: 36,     // jak hluboký oblouk (laditelné)
-                            cornerRadius: 20     // jemné zaoblení rohů (laditelné)
-                        )
-                        .padding(.top, -60) // rezerva, aby se při větším oblouku nic neuseklo
+                // Zelené pozadí – vícevrstvý gradient s highlightem, bez šumu, bez wipe masky
+                CleanGreenBackground(opacity: backgroundOpacity, pulse: backgroundPulse)
+                    .frame(height: backgroundHeight)
+                    .offset(x: parallax.width * 0.22,
+                            y: backgroundOffsetY + parallax.height * 0.16)
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
                     )
+                    .padding(.top, -26) // přetáhneme za status bar
                     .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
+                    .overlay(
+                        // Jemná spodní vinetace pro hloubku (bez “přejezdu”)
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.0),
+                                Color.black.opacity(0.06)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                        .padding(.top, -26)
+                        .allowsHitTesting(false)
+                    )
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                // Jemný parallax na základě dotyku/kurzoru
+                                let w = UIScreen.main.bounds.width
+                                let h = max(1, backgroundHeight)
+                                let px = (value.location.x / w - 0.5) * 14
+                                let py = (value.location.y / h - 0.5) * 10
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.92)) {
+                                    parallax = .init(width: px, height: py)
+                                }
+                            }
+                            .onEnded { _ in
+                                withAnimation(.spring(response: 0.55, dampingFraction: 0.92)) {
+                                    parallax = .zero
+                                }
+                            }
+                    )
                 
                 VStack(spacing: 0) {
                     // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
@@ -87,19 +121,33 @@ struct HomeView: View {
                     .padding(.bottom, headerBottomPadding)
                     .opacity(headerOpacity)
                     .offset(y: headerOffsetY)
+                    .rotation3DEffect(.degrees(headerTilt), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.6)
 
                     // Karta s měsíční útratou -> po kliknutí přepne na Historii
-                    Button(action: onOpenHistory) {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            cardScale = 0.98
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                                cardScale = 1.0
+                            }
+                        }
+                        onOpenHistory()
+                    }) {
                         MonthlySpendingCard(
                             amount: finance.monthlySpent,
                             budget: finance.monthlyBudget,
                             currencyCode: finance.currencyCode
                         )
+                        .modifier(SheenOverlay(active: showSheen))
                         .opacity(cardOpacity)
                         .scaleEffect(cardScale, anchor: .top)
-                        .shadow(color: Color.black.opacity(0.08 * cardShadowBoost),
-                                radius: 12 * cardShadowBoost,
-                                x: 0, y: 6 * cardShadowBoost)
+                        .shadow(color: Color.black.opacity(0.10 * cardShadowBoost),
+                                radius: 14 * cardShadowBoost,
+                                x: 0, y: 8 * cardShadowBoost)
+                        .offset(x: parallax.width * 0.06, y: parallax.height * 0.05)
                     }
                     .buttonStyle(.plain)
                     .padding(.top, verticalSpacingBetweenHeaderAndCard)
@@ -113,46 +161,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .background(.background)
             .onAppear {
-                // Reset pro případ návratu na obrazovku
-                backgroundReveal = 0
-                backgroundOpacity = 0
-                gradientOffset = -28
-                maskReveal = 0
-
-                headerOpacity = 0
-                headerOffsetY = 8
-
-                cardOpacity = 0
-                cardScale = 0.94
-                cardShadowBoost = 1.2
-                
-                // 1) Gradient – výška (spring) + opacita (ease) + parallax offset
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.9, blendDuration: 0.2)) {
-                    backgroundReveal = greenBackgroundHeight
-                }
-                withAnimation(.easeOut(duration: 0.38).delay(0.02)) {
-                    backgroundOpacity = 1
-                }
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.88, blendDuration: 0.2).delay(0.02)) {
-                    gradientOffset = 0
-                }
-                // 2) Gradient – wipe maska (oblouk)
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.92, blendDuration: 0.2).delay(0.03)) {
-                    maskReveal = 1
-                }
-                // 3) Hlavička – fade + slide
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.95, blendDuration: 0.2).delay(0.08)) {
-                    headerOpacity = 1
-                    headerOffsetY = 0
-                }
-                // 4) Karta – pop efekt: fade + scale, poté jemné dosednutí (shadow boost -> normal)
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.88, blendDuration: 0.2).delay(0.14)) {
-                    cardOpacity = 1
-                    cardScale = 1.0
-                }
-                withAnimation(.easeOut(duration: 0.35).delay(0.28)) {
-                    cardShadowBoost = 1.0
-                }
+                playIntro()
             }
         }
     }
@@ -160,53 +169,144 @@ struct HomeView: View {
     // Výpočet výšky zeleného pozadí tak, aby pokrylo banner + mezeru + kartu
     private var greenBackgroundHeight: CGFloat {
         let bannerApproxHeight = headerHeight + headerTopPadding + headerBottomPadding
-        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 60 /* rezerva */
+        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 72 /* rezerva */
         return total
+    }
+    
+    // Choreografie vstupu (bez viditelného “přejezdu” a bez šumu)
+    private func playIntro() {
+        // Reset pro případ návratu na obrazovku
+        backgroundHeight = 0
+        backgroundOpacity = 0
+        backgroundOffsetY = -28
+        backgroundPulse = 0
+
+        headerOpacity = 0
+        headerOffsetY = 12
+        headerTilt = 7
+
+        cardOpacity = 0
+        cardScale = 0.9
+        cardShadowBoost = 1.2
+        showSheen = false
+        
+        // 1) Pozadí – výška (spring) + opacita (ease) + posun
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.92, blendDuration: 0.2)) {
+            backgroundHeight = greenBackgroundHeight
+        }
+        withAnimation(.easeOut(duration: 0.45).delay(0.02)) {
+            backgroundOpacity = 1
+        }
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.9, blendDuration: 0.2).delay(0.02)) {
+            backgroundOffsetY = 0
+        }
+        // 1.1) Jemný puls highlightu po usazení
+        withAnimation(.easeInOut(duration: 1.6).delay(0.28)) {
+            backgroundPulse = 1
+        }
+        // 2) Hlavička – fade + slide + 3D tilt dolů a zpět
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.95, blendDuration: 0.2).delay(0.12)) {
+            headerOpacity = 1
+            headerOffsetY = 0
+        }
+        withAnimation(.spring(response: 0.65, dampingFraction: 0.9).delay(0.12)) {
+            headerTilt = 0
+        }
+        // 3) Karta – hero-pop: fade + scale, poté jemné dosednutí (shadow boost -> normal) a sheen sweep
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.88, blendDuration: 0.2).delay(0.2)) {
+            cardOpacity = 1
+            cardScale = 1.0
+        }
+        withAnimation(.easeOut(duration: 0.4).delay(0.34)) {
+            cardShadowBoost = 1.0
+        }
+        // Sheen krátce po dosednutí
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            showSheen = true
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                showSheen = false
+            }
+        }
     }
 }
 
-// MARK: - Zaoblená maska s obloukem do ztracena
-private struct RoundedBottomMask: View {
-    // 0..1 – jak moc je maska “otevřená” (pro wipe animaci)
-    var revealProgress: CGFloat
-    // Výška oblouku (amplituda křivky)
-    var curveHeight: CGFloat
-    // Zaoblení rohů nahoře (jemné)
-    var cornerRadius: CGFloat
+// MARK: - Čistý zelený background (lineární + jemný radiální highlight, bez “šumu” a bez wipe)
+private struct CleanGreenBackground: View {
+    @Environment(\.colorScheme) private var scheme
+    var opacity: CGFloat = 1
+    var pulse: CGFloat = 0 // 0..1
 
     var body: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
-            let height = geo.size.height
-            let visibleHeight = max(0, min(height, height * revealProgress))
-            let arcDepth = min(curveHeight, max(0, visibleHeight)) // bezpečnost, aby oblouk nebyl větší než výška
-
-            Path { path in
-                // Začneme vlevo nahoře (s malým zaoblením)
-                path.move(to: CGPoint(x: 0, y: 0 + cornerRadius))
-                path.addQuadCurve(
-                    to: CGPoint(x: cornerRadius, y: 0),
-                    control: CGPoint(x: 0, y: 0)
-                )
-                // Horní hrana
-                path.addLine(to: CGPoint(x: width - cornerRadius, y: 0))
-                path.addQuadCurve(
-                    to: CGPoint(x: width, y: cornerRadius),
-                    control: CGPoint(x: width, y: 0)
-                )
-                // Pravý svislý okraj až k oblouku
-                path.addLine(to: CGPoint(x: width, y: visibleHeight - arcDepth))
-                // Spodní oblouk (do ztracena)
-                path.addQuadCurve(
-                    to: CGPoint(x: 0, y: visibleHeight - arcDepth),
-                    control: CGPoint(x: width / 2, y: visibleHeight + arcDepth)
-                )
-                // Levý svislý okraj zpět nahoru
-                path.addLine(to: CGPoint(x: 0, y: cornerRadius))
-                path.closeSubpath()
-            }
-            .fill(Color.white)
+        let baseTop = Color.green.opacity((scheme == .dark ? 0.36 : 0.28) * opacity)
+        let baseMid = Color.green.opacity((scheme == .dark ? 0.24 : 0.18) * opacity)
+        let baseClear = Color.green.opacity(0.0)
+        
+        ZStack {
+            // Hlavní lineární gradient
+            LinearGradient(
+                colors: [baseTop, baseMid, baseClear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            // Jemný radiální highlight (pulsuje decentně)
+            RadialGradient(
+                gradient: Gradient(colors: [
+                    Color.white.opacity(0.14 * opacity * (0.7 + 0.3 * pulse)),
+                    Color.white.opacity(0.0)
+                ]),
+                center: .init(x: 0.28, y: 0.1),
+                startRadius: 10,
+                endRadius: 210 + 24 * pulse
+            )
+            .blendMode(.screen)
+            .allowsHitTesting(false)
         }
+    }
+}
+
+// MARK: - Sheen Overlay (krátký světelný průjezd přes kartu)
+private struct SheenOverlay: ViewModifier {
+    var active: Bool
+    
+    @State private var x: CGFloat = -1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    let w = proxy.size.width
+                    let h = proxy.size.height
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .clear, location: 0.0),
+                                    .init(color: .white.opacity(0.10), location: 0.45),
+                                    .init(color: .white.opacity(0.26), location: 0.50),
+                                    .init(color: .white.opacity(0.10), location: 0.55),
+                                    .init(color: .clear, location: 1.0)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .rotationEffect(.degrees(20))
+                        .frame(width: w * 0.35, height: h * 1.6)
+                        .offset(x: x * (w + w * 0.35), y: -h * 0.3)
+                        .allowsHitTesting(false)
+                        .opacity(active ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.9), value: active)
+                        .onChange(of: active) { _, new in
+                            if new {
+                                x = -0.4
+                                withAnimation(.easeInOut(duration: 0.9)) {
+                                    x = 1.2
+                                }
+                            }
+                        }
+                }
+            }
     }
 }
 
@@ -218,7 +318,7 @@ private struct MonthlySpendingCard: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            // Leading icon badge for iOS affordance
+            // Leading icon badge
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(.thinMaterial)
@@ -254,19 +354,19 @@ private struct MonthlySpendingCard: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.primary.opacity(0.05))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.6)
         )
-        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
-        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color.black.opacity(0.10), radius: 14, x: 0, y: 8)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func formattedAmount(_ value: Decimal) -> String {
@@ -307,26 +407,7 @@ private struct ProfileBadge: View {
     }
 }
 
-// MARK: - Gradient Background (zelený přechod pro horní část)
-private struct GradientBackground: View {
-    @Environment(\.colorScheme) private var scheme
-    var opacity: CGFloat = 1
-    
-    var body: some View {
-        let top = Color.green.opacity((scheme == .dark ? 0.35 : 0.25) * opacity)
-        let mid = Color.green.opacity((scheme == .dark ? 0.22 : 0.16) * opacity)
-        let clear = Color.green.opacity(0.0)
-        
-        LinearGradient(
-            colors: [top, mid, clear],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-}
-
 #Preview {
     HomeView(onOpenHistory: {})
         .environmentObject(FinanceStore())
 }
-
