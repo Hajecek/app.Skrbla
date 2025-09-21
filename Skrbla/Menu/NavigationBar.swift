@@ -38,6 +38,7 @@ extension TabItem {
 struct ModernBottomNavigationBar: View {
     @Binding var selectedTab: Int
     let tabs: [TabItem]
+    var onPlusTapped: () -> Void = {}
     @Namespace private var animation
     
     // iOS-like sizing tuned to the reference (no labels)
@@ -114,6 +115,7 @@ struct ModernBottomNavigationBar: View {
             // Separate round glass button (plus)
             RoundGlassButton(size: roundButtonSize, systemImage: "plus", tabColor: tabColor) {
                 UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                onPlusTapped()
             }
         }
         .padding(.horizontal, horizontalPadding)
@@ -236,6 +238,7 @@ private struct RoundGlassButton: View {
 // MARK: - Main Content View with Floating Navigation (Fallback for iOS < 26)
 struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
+    @State private var showPlusSheet: Bool = false
     let tabs: [TabItem]
     let content: (Int, @escaping (Int) -> Void) -> Content
     
@@ -276,7 +279,30 @@ struct MainContentView<Content: View>: View {
             }
         }
         .overlay(alignment: .bottom) {
-            ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs)
+            ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs, onPlusTapped: {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                showPlusSheet = true
+            })
+        }
+        .sheet(isPresented: $showPlusSheet) {
+            PlusQuickActionsSheet(
+                onAddManual: {
+                    // Např. přepnout na tab "Přidat" nebo otevřít AddView
+                    selectedTab = 1
+                    showPlusSheet = false
+                },
+                onScanBarcode: {
+                    // TODO: Napojit skener
+                    showPlusSheet = false
+                },
+                onRecognizeImage: {
+                    // TODO: Napojit rozpoznávání
+                    showPlusSheet = false
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(20)
         }
     }
 }
@@ -285,6 +311,8 @@ struct MainContentView<Content: View>: View {
 @available(iOS 26.0, *)
 struct iOS26TabContainer: View {
     @State private var selectedTab: Int = 0
+    @State private var lastNonPlusTab: Int = 0
+    @State private var showPlusSheet: Bool = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -304,10 +332,23 @@ struct iOS26TabContainer: View {
                 ProfileView()
                     .tag(4)
             }
-            // Volitelný systémově oddělený Search tab (smazat, pokud ho nechceš)
+            // Volitelný systémově oddělený Search tab -> používáme jako „Plus“ spouštěč sheetu
             Tab("Hledat", systemImage: "plus", value: 5, role: .search) {
-                ProfileView()
+                // Prázdný obsah, nikdy se nezobrazí – tap vyvolá sheet a výběr vrátíme zpět
+                EmptyView()
                     .tag(5)
+            }
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            if newValue == 5 {
+                // Uživatel tapnul na „plus“ tab: otevři sheet a vrať tab zpět
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                showPlusSheet = true
+                // Vrátíme vybraný tab zpět na poslední skutečný (aby UI nepřeskočilo)
+                selectedTab = lastNonPlusTab
+            } else {
+                // Uložíme si poslední skutečný tab (mimo plus)
+                lastNonPlusTab = newValue
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -323,6 +364,23 @@ struct iOS26TabContainer: View {
                     .padding(.horizontal, 14)
                     .padding(.top, 6)
             }
+        }
+        .sheet(isPresented: $showPlusSheet) {
+            PlusQuickActionsSheet(
+                onAddManual: {
+                    selectedTab = 1 // přepnout na „Přidat“ tab (pokud ho v iOS26 používáš)
+                    showPlusSheet = false
+                },
+                onScanBarcode: {
+                    showPlusSheet = false
+                },
+                onRecognizeImage: {
+                    showPlusSheet = false
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(20)
         }
     }
 }
@@ -366,6 +424,81 @@ struct MonthlySpentAccessory: View {
     }
 }
 
+// MARK: - Plus Quick Actions Sheet (inspirace „Najít“)
+private struct PlusQuickActionsSheet: View {
+    var onAddManual: () -> Void
+    var onScanBarcode: () -> Void
+    var onRecognizeImage: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ActionRow(title: "Přidat ručně", subtitle: "Zadat částku a detaily", systemImage: "pencil.circle.fill", tint: .blue, action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onAddManual()
+                    })
+                    ActionRow(title: "Skenovat čárový kód", subtitle: "Rychlé načtení z kódu", systemImage: "barcode.viewfinder", tint: .green, action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onScanBarcode()
+                    })
+                    ActionRow(title: "Rozpoznat z obrázku", subtitle: "Použít fotoaparát nebo knihovnu", systemImage: "camera.viewfinder", tint: .orange, action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onRecognizeImage()
+                    })
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Přidat")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Hotovo") { dismiss() }
+                }
+            }
+        }
+    }
+    
+    private struct ActionRow: View {
+        let title: String
+        let subtitle: String
+        let systemImage: String
+        let tint: Color
+        let action: () -> Void
+        
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(tint.opacity(0.18))
+                        Image(systemName: systemImage)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(tint)
+                    }
+                    .frame(width: 44, height: 44)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.body.weight(.semibold))
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(title)
+            .accessibilityHint(subtitle)
+        }
+    }
+}
+
 // MARK: - Preview
 #Preview {
     if #available(iOS 26.0, *) {
@@ -393,4 +526,3 @@ struct MonthlySpentAccessory: View {
         .environmentObject(FinanceStore())
     }
 }
-
