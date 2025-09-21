@@ -25,13 +25,18 @@ struct HomeView: View {
     private let verticalSpacingBetweenHeaderAndCard: CGFloat = 16
     private let horizontalPadding: CGFloat = 20
 
+    // Animace horního zeleného pozadí
+    @State private var backgroundReveal: CGFloat = 0
+    @State private var backgroundOpacity: CGFloat = 0
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Zelené pozadí od horního okraje po spodní hranu karty
-                GradientBackground()
-                    .frame(height: greenBackgroundHeight)
+                // Zelené pozadí s příjezdovou animací (výška + opacita)
+                GradientBackground(opacity: backgroundOpacity)
+                    .frame(height: backgroundReveal)
                     .ignoresSafeArea(edges: .top)
+                    .accessibilityHidden(true)
                 
                 VStack(spacing: 0) {
                     // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
@@ -81,6 +86,19 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .background(.background)
+            .onAppear {
+                // Reset pro případ návratu na obrazovku
+                backgroundReveal = 0
+                backgroundOpacity = 0
+                
+                // Rychlejší rozvinutí výšky, pak jemné dofadeování
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0.2)) {
+                    backgroundReveal = greenBackgroundHeight
+                }
+                withAnimation(.easeOut(duration: 0.35).delay(0.05)) {
+                    backgroundOpacity = 1
+                }
+            }
         }
     }
     
@@ -189,10 +207,11 @@ private struct ProfileBadge: View {
 // MARK: - Gradient Background (zelený přechod pro horní část)
 private struct GradientBackground: View {
     @Environment(\.colorScheme) private var scheme
+    var opacity: CGFloat = 1
     
     var body: some View {
-        let top = Color.green.opacity(scheme == .dark ? 0.35 : 0.25)
-        let mid = Color.green.opacity(scheme == .dark ? 0.22 : 0.16)
+        let top = Color.green.opacity((scheme == .dark ? 0.35 : 0.25) * opacity)
+        let mid = Color.green.opacity((scheme == .dark ? 0.22 : 0.16) * opacity)
         let clear = Color.green.opacity(0.0)
         
         LinearGradient(
