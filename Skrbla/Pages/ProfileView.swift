@@ -10,6 +10,9 @@ import SwiftUI
 // MARK: - Profile View (iOS 26-first card layout)
 struct ProfileView: View {
     @Environment(\.colorScheme) private var scheme
+    @EnvironmentObject private var authManager: AuthenticationManager
+    @EnvironmentObject private var appStateManager: AppStateManager
+    @AppStorage("wasLoggedOut") private var wasLoggedOut: Bool = false
     
     // Mock data – napojte na Store/Model
     private let displayName = "Michal Hájek"
@@ -89,8 +92,8 @@ struct ProfileView: View {
             // Centrální alerty
             .alert("Opravdu se chcete odhlásit?", isPresented: $showLogoutAlert) {
                 Button("Odhlásit se", role: .destructive) {
-                    // TODO: Logout action
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    // Kompletní odhlášení + explicitní přesměrování na LoginView
+                    performLogoutAndGoToLogin()
                 }
                 Button("Zrušit", role: .cancel) {}
             } message: {
@@ -106,6 +109,19 @@ struct ProfileView: View {
                 Text("Tato akce je nevratná. Všechna vaše data budou smazána.")
             }
         }
+    }
+    
+    private func performLogoutAndGoToLogin() {
+        // Haptics
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        // 1) Ukončit případné Live Aktivity
+        LiveActivityManager.shared.endActivity()
+        // 2) Vyčistit auth stav
+        authManager.logout()
+        // 3) Resetovat app background stav a vynutit LoginView
+        appStateManager.resetForLogout()
+        // 4) Trvalý příznak, aby se po restartu stále ukazoval LoginView, dokud se uživatel nepřihlásí
+        wasLoggedOut = true
     }
 }
 
@@ -553,4 +569,6 @@ struct ProfileMenuRow: View {
         ProfileView()
     }
     .preferredColorScheme(.dark)
+    .environmentObject(AuthenticationManager())
+    .environmentObject(AppStateManager())
 }

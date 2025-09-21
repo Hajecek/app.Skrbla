@@ -13,6 +13,7 @@ struct SkrblaApp: App {
     @State private var showAuthentication = false
     @State private var didFinishOnboarding = false
     @AppStorage("isFirstLaunch") var isFirstLaunch: Bool = true
+    @AppStorage("wasLoggedOut") private var wasLoggedOut: Bool = false
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var appStateManager = AppStateManager()
     @Environment(\.scenePhase) private var scenePhase
@@ -29,20 +30,33 @@ struct SkrblaApp: App {
                         .environmentObject(appStateManager)
                 }
                 
+                // 1.5) Explicitní přesměrování na LoginView po logoutu (trvalé, dokud se nepřihlásí)
+                if (appStateManager.forceLoginScreen || wasLoggedOut) && !authManager.isAuthenticated {
+                    LoginView(authManager: authManager)
+                        .transition(.opacity)
+                        .environmentObject(appStateManager)
+                }
+                
                 // 2) LoginView – pouze při prvním spuštění po dokončení onboardingu
                 if isFirstLaunch &&
                     didFinishOnboarding &&
                     !authManager.isAuthenticated &&
                     !showLaunchScreen &&
                     !showAuthentication &&
-                    !appStateManager.shouldRequireAuth {
+                    !appStateManager.shouldRequireAuth &&
+                    !appStateManager.forceLoginScreen &&
+                    !wasLoggedOut {
                     LoginView(authManager: authManager)
                         .transition(.opacity)
                         .environmentObject(appStateManager)
                 }
                 
-                // 3) Launch screen – krátce při startu
-                if showLaunchScreen && !showAuthentication && !appStateManager.shouldRequireAuth {
+                // 3) Launch screen – VŽDY při startu, dokud je showLaunchScreen == true
+                // Odebrali jsme podmínku !wasLoggedOut, aby se Launch ukázal i po odhlášení.
+                if showLaunchScreen &&
+                    !showAuthentication &&
+                    !appStateManager.shouldRequireAuth &&
+                    !appStateManager.forceLoginScreen {
                     LaunchView()
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -53,7 +67,9 @@ struct SkrblaApp: App {
                                         showAuthentication = true
                                     } else {
                                         // Pokud už to není první spuštění a nejsme ověřeni, rovnou zobraz biometriku
-                                        if !isFirstLaunch && !authManager.isAuthenticated {
+                                        if !isFirstLaunch && !authManager.isAuthenticated && !wasLoggedOut {
+                                            // Pokud jsme odhlášeni (wasLoggedOut), nechceme rovnou biometriku,
+                                            // protože zobrazujeme LoginView. Proto přidán !wasLoggedOut.
                                             showAuthentication = true
                                         }
                                     }
@@ -67,7 +83,9 @@ struct SkrblaApp: App {
                     !didFinishOnboarding &&
                     !showAuthentication &&
                     !showLaunchScreen &&
-                    !appStateManager.shouldRequireAuth {
+                    !appStateManager.shouldRequireAuth &&
+                    !appStateManager.forceLoginScreen &&
+                    !wasLoggedOut {
                     OnboardingView {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             didFinishOnboarding = true
@@ -76,11 +94,12 @@ struct SkrblaApp: App {
                     .transition(.opacity)
                 }
                 
-                // 5) Biometrická autentizace – při návratu z pozadí, explicitně vyžádaná,
-                // a také při startu po prvním spuštění, pokud nejsme ověřeni.
-                if showAuthentication ||
+                // 5) Biometrická autentizace – jen pokud nejsme v režimu „po logoutu drž LoginView“
+                if (showAuthentication ||
                     appStateManager.shouldRequireAuth ||
-                    (!isFirstLaunch && !authManager.isAuthenticated && !showLaunchScreen) {
+                    (!isFirstLaunch && !authManager.isAuthenticated && !showLaunchScreen)) &&
+                    !appStateManager.forceLoginScreen &&
+                    !wasLoggedOut {
                     AuthenticationView(authManager: authManager)
                         .transition(.opacity)
                         .zIndex(1000)
@@ -94,7 +113,8 @@ struct SkrblaApp: App {
                 }
             }
             .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
-                if shouldRequire {
+                // Pokud jsme po odhlášení (wasLoggedOut == true), nevyžaduj biometriku
+                if shouldRequire && !wasLoggedOut {
                     print("🔄 Návrat z pozadí - vyžaduje se ověření")
                     authManager.requireAuthentication()
                     showAuthentication = true
@@ -103,17 +123,22 @@ struct SkrblaApp: App {
             }
             .onReceive(authManager.$isAuthenticated) { isAuthenticated in
                 if isAuthenticated {
-                    print("✅ Ověření úspěšné - přesměrovávám")
-                    // Po úspěšném přihlášení v LoginView se nastaví isFirstLaunch = false (v LoginView),
-                    // čímž se při dalším spuštění vynechá Onboarding i Login a zobrazí se biometrika.
+                    print("✅ Ověření/přihlášení úspěšné - přesměrovávám")
+                    // Po úspěšném přihlášení vypnout režim „po logoutu“
+                    wasLoggedOut = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showAuthentication = false
                         }
                         appStateManager.resetBackgroundState()
+                        appStateManager.forceLoginScreen = false
                     }
                 }
             }
+            // DŮLEŽITÉ: odstraňujeme hacky, které vypínaly launch při wasLoggedOut,
+            // aby se LaunchView ukázalo při každém startu:
+            // - Žádné .onAppear { if wasLoggedOut { showLaunchScreen = false } }
+            // - Žádné .onChange(of: wasLoggedOut) { ... vypnutí launch ... }
         }
     }
 }

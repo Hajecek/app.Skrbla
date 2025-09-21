@@ -13,6 +13,7 @@ class AppStateManager: ObservableObject {
     @Published var isInBackground = false
     @Published var backgroundTime: Date?
     @Published var shouldRequireAuth = false
+    @Published var forceLoginScreen = false
     
     private let backgroundThreshold: TimeInterval = 5.0 // 5 sekund
     private var backgroundTimer: Timer?
@@ -86,5 +87,12 @@ class AppStateManager: ObservableObject {
         shouldRequireAuth = false
         backgroundTimer?.invalidate()
         backgroundTimer = nil
+    }
+    
+    // MARK: - Logout Reset
+    func resetForLogout() {
+        print("🚪 Reset stavu pro logout")
+        resetBackgroundState()
+        forceLoginScreen = true
     }
 }
