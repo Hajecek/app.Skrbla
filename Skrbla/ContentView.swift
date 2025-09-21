@@ -29,6 +29,8 @@ struct ContentView: View {
                     case 2:
                         HistoryView()
                     case 3:
+                        SubscriptionView()
+                    case 4:
                         ProfileView()
                     default:
                         HomeView(onOpenHistory: { onSelectTab(2) })

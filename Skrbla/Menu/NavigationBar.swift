@@ -27,9 +27,11 @@ extension TabItem {
     static let home = TabItem(title: "Domů", icon: "house", selectedIcon: "house.fill")
     static let add = TabItem(title: "Přidat", icon: "dot.radiowaves.left.and.right", selectedIcon: "dot.radiowaves.left.and.right")
     static let history = TabItem(title: "Historie", icon: "music.note.list", selectedIcon: "music.note.list")
+    static let subscription = TabItem(title: "Předplatné", icon: "calendar", selectedIcon: "calendar")
     static let profile = TabItem(title: "Profil", icon: "person", selectedIcon: "person.fill")
     
-    static let defaultTabs: [TabItem] = [.home, .add, .history, .profile]
+    // Pořadí: Domů, Přidat, Historie, Předplatné, Profil
+    static let defaultTabs: [TabItem] = [.home, .add, .history, .subscription, .profile]
 }
 
 // MARK: - Floating Navigation Bar (Capsule) + Separate Round Button
@@ -294,14 +296,18 @@ struct iOS26TabContainer: View {
                 HistoryView()
                     .tag(2)
             }
-            Tab("Profil", systemImage: "person", value: 3) {
-                ProfileView()
+            Tab("Předplatné", systemImage: "calendar", value: 3) {
+                SubscriptionView()
                     .tag(3)
             }
-            // Volitelný systémově oddělený Search tab (smazat, pokud ho nechceš)
-            Tab("Hledat", systemImage: "plus", value: 4, role: .search) {
+            Tab("Profil", systemImage: "person", value: 4) {
                 ProfileView()
                     .tag(4)
+            }
+            // Volitelný systémově oddělený Search tab (smazat, pokud ho nechceš)
+            Tab("Hledat", systemImage: "plus", value: 5, role: .search) {
+                ProfileView()
+                    .tag(5)
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -376,6 +382,8 @@ struct MonthlySpentAccessory: View {
             case 2:
                 HistoryView()
             case 3:
+                SubscriptionView()
+            case 4:
                 ProfileView()
             default:
                 HomeView(onOpenHistory: { onSelectTab(2) })
@@ -385,3 +393,4 @@ struct MonthlySpentAccessory: View {
         .environmentObject(FinanceStore())
     }
 }
+
