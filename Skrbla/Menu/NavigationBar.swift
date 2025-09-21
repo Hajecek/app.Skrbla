@@ -268,7 +268,7 @@ struct MainContentView<Content: View>: View {
             if selectedTab != 0 {
                 MonthlySpentAccessory()
                     .padding(.horizontal, 24) // align with bar's outer horizontal padding
-                    .padding(.bottom, 84) // height of bar + spacing to float above
+                    .padding(.bottom, 78) // slightly closer to the bar for a more iOS-like feel
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.36, dampingFraction: 0.86), value: selectedTab)
             }
@@ -314,8 +314,8 @@ struct iOS26TabContainer: View {
         .tabViewBottomAccessory {
             if selectedTab != 0 {
                 MonthlySpentAccessory()
-                    .padding(.horizontal, 12) // accessory content inset within the tab bar
-                    .padding(.top, 4)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 6)
             }
         }
     }
@@ -330,24 +330,30 @@ struct MonthlySpentAccessory: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             // Left icon
             Image(systemName: "creditcard.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
+                .alignmentGuide(.firstTextBaseline) { d in d[.bottom] }
+                .offset(y: -3) // optický posun ikonky výš (původně -1)
             
-            Spacer(minLength: 0)
+            Spacer(minLength: 10)
             
             // Right amount (slightly larger)
             Text(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
-                .font(.system(size: 17, weight: .semibold)) // larger than before
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.85)
+                .alignmentGuide(.firstTextBaseline) { d in d[.bottom] }
+                .offset(y: -3) // stejný optický posun jako ikonka
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6) // o něco menší, aby se celý obsah posunul výš v rámci tab baru
         .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(minHeight: 28)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Utraceno tento měsíc")
         .accessibilityValue(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
@@ -379,4 +385,3 @@ struct MonthlySpentAccessory: View {
         .environmentObject(FinanceStore())
     }
 }
-
