@@ -20,9 +20,9 @@ struct HomeView: View {
     // Laditelné konstanty pro výšku zeleného pozadí
     private let headerHeight: CGFloat = 44 /* titulek + podtitulek + odskoky */
     private let headerTopPadding: CGFloat = 12
-    private let headerBottomPadding: CGFloat = 14
-    private let cardEstimatedHeight: CGFloat = 100 /* sníženo, karta je nyní jednodušší */
-    private let verticalSpacingBetweenHeaderAndCard: CGFloat = 20
+    private let headerBottomPadding: CGFloat = 8
+    private let cardEstimatedHeight: CGFloat = 112 /* karta je jednodušší, ale vyšší kvůli iOS spacingu */
+    private let verticalSpacingBetweenHeaderAndCard: CGFloat = 16
     private let horizontalPadding: CGFloat = 20
 
     var body: some View {
@@ -33,12 +33,12 @@ struct HomeView: View {
                     .frame(height: greenBackgroundHeight)
                     .ignoresSafeArea(edges: .top)
                 
-                VStack(spacing: 20) {
+                VStack(spacing: 0) {
                     // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Vítej zpátky 👋")
-                                .font(.largeTitle.weight(.bold)) // hlavní Apple font (SF)
+                                .font(.largeTitle.weight(.bold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
 
@@ -60,7 +60,7 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, horizontalPadding)
                     .padding(.top, headerTopPadding)
-                    .padding(.bottom, headerBottomPadding) // zmenšená mezera pod hlavičkou, aby karta byla výš
+                    .padding(.bottom, headerBottomPadding)
 
                     // Karta s měsíční útratou -> po kliknutí přepne na Historii
                     Button(action: onOpenHistory) {
@@ -71,12 +71,13 @@ struct HomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .padding(.top, verticalSpacingBetweenHeaderAndCard)
+                    .padding(.horizontal, horizontalPadding)
                     .accessibilityHint("Otevřít historii výdajů za tento měsíc")
 
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
             }
-            // Skrytí systémového navigation baru, aby se nezdvojoval s vlastní hlavičkou
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .background(.background)
@@ -85,9 +86,8 @@ struct HomeView: View {
     
     // Výpočet výšky zeleného pozadí tak, aby pokrylo banner + mezeru + kartu
     private var greenBackgroundHeight: CGFloat {
-        // Odhad: horní padding + (vizuální) výška banneru + spodní padding + mezera + výška karty + rezerva
         let bannerApproxHeight = headerHeight + headerTopPadding + headerBottomPadding
-        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 70 /* rezerva */
+        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 60 /* rezerva */
         return total
     }
 }
@@ -99,31 +99,37 @@ private struct MonthlySpendingCard: View {
     let currencyCode: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Horní řádek: název měsíce a případná ikonka
-            HStack(alignment: .firstTextBaseline) {
-                Text(monthTitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                // Placeholder pro případnou ikonku/trend do budoucna
+        HStack(alignment: .center, spacing: 12) {
+            // Leading icon badge for iOS affordance
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.thinMaterial)
                 Image(systemName: "creditcard.fill")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.tint)
-                    .opacity(0.9)
+            }
+            .frame(width: 44, height: 44)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(monthTitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Text(formattedAmount(amount))
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
+
+                Text("Utraceno v aktuálním měsíci")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            // Velká částka v systémovém fontu
-            Text(formattedAmount(amount))
-                .font(.title.weight(.semibold))
-                .monospacedDigit()
+            Spacer(minLength: 8)
 
-            // Popisek pod částkou
-            Text("Utraceno v aktuálním měsíci")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .padding(16)
         .background(
@@ -131,11 +137,15 @@ private struct MonthlySpendingCard: View {
                 .fill(.ultraThinMaterial)
         )
         .background(
-            // Jemné podbarvení pro lepší kontrast v tmavém režimu
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color.primary.opacity(0.04))
         )
-        .padding(.horizontal, 20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func formattedAmount(_ value: Decimal) -> String {
