@@ -18,6 +18,10 @@ struct ProfileView: View {
     private let thisMonth = 8
     private let total = 156
     
+    // Stavy potvrzovacích dialogů (alert uprostřed)
+    @State private var showLogoutAlert = false
+    @State private var showDeleteAlert = false
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -44,7 +48,8 @@ struct ProfileView: View {
                         title: "Odhlásit se",
                         systemImage: "rectangle.portrait.and.arrow.right"
                     ) {
-                        // TODO: Logout action
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        showLogoutAlert = true
                     }
                     .padding(.horizontal, 16)
                     
@@ -52,7 +57,8 @@ struct ProfileView: View {
                         title: "Vymazat účet",
                         systemImage: "trash"
                     ) {
-                        // TODO: Delete account action (potvrzení + nevratná akce)
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                        showDeleteAlert = true
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
@@ -79,6 +85,25 @@ struct ProfileView: View {
                     }
                     .accessibilityLabel("Možnosti")
                 }
+            }
+            // Centrální alerty
+            .alert("Opravdu se chcete odhlásit?", isPresented: $showLogoutAlert) {
+                Button("Odhlásit se", role: .destructive) {
+                    // TODO: Logout action
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
+                Button("Zrušit", role: .cancel) {}
+            } message: {
+                Text("Budete muset znovu zadat přihlašovací údaje při příštím otevření aplikace.")
+            }
+            .alert("Trvale vymazat účet?", isPresented: $showDeleteAlert) {
+                Button("Vymazat účet", role: .destructive) {
+                    // TODO: Delete account action (nevratné)
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+                Button("Zrušit", role: .cancel) {}
+            } message: {
+                Text("Tato akce je nevratná. Všechna vaše data budou smazána.")
             }
         }
     }
