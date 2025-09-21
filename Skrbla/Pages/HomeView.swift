@@ -39,7 +39,7 @@ struct HomeView: View {
     @State private var cardOpacity: CGFloat = 0
     @State private var cardScale: CGFloat = 0.93
     @State private var cardShadowBoost: CGFloat = 1.12 // násobič stínu při příjezdu
-    @State private var showSheen: Bool = false
+    @State private var triggerBackgroundSweep: Bool = false
 
     // Jemný parallax podle polohy kurzoru/dotyku (bez CoreMotion)
     @State private var parallax: CGSize = .zero
@@ -139,9 +139,9 @@ struct HomeView: View {
                         MonthlySpendingCard(
                             amount: finance.monthlySpent,
                             budget: finance.monthlyBudget,
-                            currencyCode: finance.currencyCode
+                            currencyCode: finance.currencyCode,
+                            backgroundSweep: triggerBackgroundSweep
                         )
-                        .modifier(SheenOverlay(active: showSheen))
                         .opacity(cardOpacity)
                         .scaleEffect(cardScale, anchor: .top)
                         .shadow(color: Color.black.opacity(0.10 * cardShadowBoost),
@@ -188,7 +188,7 @@ struct HomeView: View {
         cardOpacity = 0
         cardScale = 0.9
         cardShadowBoost = 1.2
-        showSheen = false
+        triggerBackgroundSweep = false
         
         // 1) Pozadí – výška (spring) + opacita (ease) + posun
         withAnimation(.spring(response: 0.6, dampingFraction: 0.92, blendDuration: 0.2)) {
@@ -212,7 +212,7 @@ struct HomeView: View {
         withAnimation(.spring(response: 0.65, dampingFraction: 0.9).delay(0.12)) {
             headerTilt = 0
         }
-        // 3) Karta – hero-pop: fade + scale, poté jemné dosednutí (shadow boost -> normal) a sheen sweep
+        // 3) Karta – hero-pop: fade + scale, poté jemné dosednutí (shadow boost -> normal)
         withAnimation(.spring(response: 0.55, dampingFraction: 0.88, blendDuration: 0.2).delay(0.2)) {
             cardOpacity = 1
             cardScale = 1.0
@@ -220,12 +220,12 @@ struct HomeView: View {
         withAnimation(.easeOut(duration: 0.4).delay(0.34)) {
             cardShadowBoost = 1.0
         }
-        // Sheen krátce po dosednutí
+        // 4) Spusť průjezd změny pozadí uvnitř karty (ne přes obsah)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            showSheen = true
+            triggerBackgroundSweep = true
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                showSheen = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                triggerBackgroundSweep = false
             }
         }
     }
@@ -265,126 +265,163 @@ private struct CleanGreenBackground: View {
     }
 }
 
-// MARK: - Sheen Overlay (krátký světelný průjezd přes kartu)
-private struct SheenOverlay: ViewModifier {
-    var active: Bool
-    
-    @State private var x: CGFloat = -1.0
-    
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .leading) {
-                GeometryReader { proxy in
-                    let w = proxy.size.width
-                    let h = proxy.size.height
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(stops: [
-                                    .init(color: .clear, location: 0.0),
-                                    .init(color: .white.opacity(0.10), location: 0.45),
-                                    .init(color: .white.opacity(0.26), location: 0.50),
-                                    .init(color: .white.opacity(0.10), location: 0.55),
-                                    .init(color: .clear, location: 1.0)
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .rotationEffect(.degrees(20))
-                        .frame(width: w * 0.35, height: h * 1.6)
-                        .offset(x: x * (w + w * 0.35), y: -h * 0.3)
-                        .allowsHitTesting(false)
-                        .opacity(active ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.9), value: active)
-                        .onChange(of: active) { _, new in
-                            if new {
-                                x = -0.4
-                                withAnimation(.easeInOut(duration: 0.9)) {
-                                    x = 1.2
-                                }
-                            }
-                        }
-                }
-            }
-    }
-}
-
-// MARK: - Monthly Spending Card
+// MARK: - Monthly Spending Card (background sweep uvnitř pozadí)
 private struct MonthlySpendingCard: View {
     let amount: Decimal
     let budget: Decimal
     let currencyCode: String?
+    let backgroundSweep: Bool
+
+    private let cornerRadius: CGFloat = 18
+    private let minHeight: CGFloat = 76
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Leading icon badge
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.thinMaterial)
-                Image(systemName: "creditcard.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.tint)
-            }
-            .frame(width: 44, height: 44)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(monthTitle)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                // Dominantní částka
-                Text(formattedAmount(amount))
-                    .font(.largeTitle.weight(.bold))
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-
-                Text("Utraceno v aktuálním měsíci")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 8)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+        // Výška a padding stejné jako dřív; background se klipuje do stejného cornerRadius
+        HStack(spacing: 0) {
+            ContentLayer(amount: amount, budget: budget, currencyCode: currencyCode)
+                .padding(16)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
-        )
+        .frame(minHeight: minHeight, alignment: .center)
+        .background {
+            BackgroundLayer(cornerRadius: cornerRadius, sweep: backgroundSweep)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.6)
         )
         .shadow(color: Color.black.opacity(0.10), radius: 14, x: 0, y: 8)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
-    private func formattedAmount(_ value: Decimal) -> String {
-        let code = currencyCode ?? "CZK"
-        let doubleValue = NSDecimalNumber(decimal: value).doubleValue
-        return doubleValue.formatted(.currency(code: code))
+    // MARK: Background only
+    private struct BackgroundLayer: View {
+        let cornerRadius: CGFloat
+        let sweep: Bool
+
+        var body: some View {
+            ZStack {
+                // Base materials/colors
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.primary.opacity(0.05))
+
+                // Sheen that affects only the background
+                SheenBackgroundSweep(active: sweep, cornerRadius: cornerRadius)
+            }
+        }
     }
-    
-    private var monthTitle: String {
-        // Vždy česky: například "září 2025" -> s velkým písmenem "Září 2025"
-        let csLocale = Locale(identifier: "cs_CZ")
-        let raw = Date().formatted(
-            Date.FormatStyle()
-                .locale(csLocale)
-                .month(.wide)
-                .year(.defaultDigits)
-        )
-        return raw.prefix(1).uppercased() + raw.dropFirst()
+
+    // MARK: Content only
+    private struct ContentLayer: View {
+        let amount: Decimal
+        let budget: Decimal
+        let currencyCode: String?
+
+        var body: some View {
+            HStack(alignment: .center, spacing: 12) {
+                // Leading icon badge
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.thinMaterial)
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.tint)
+                }
+                .frame(width: 44, height: 44)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(monthTitle)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    // Dominantní částka
+                    Text(formattedAmount(amount))
+                        .font(.largeTitle.weight(.bold))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+
+                    Text("Utraceno v aktuálním měsíci")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+
+        private func formattedAmount(_ value: Decimal) -> String {
+            let code = currencyCode ?? "CZK"
+            let doubleValue = NSDecimalNumber(decimal: value).doubleValue
+            return doubleValue.formatted(.currency(code: code))
+        }
+        
+        private var monthTitle: String {
+            // Vždy česky: například "září 2025" -> s velkým písmenem "Září 2025"
+            let csLocale = Locale(identifier: "cs_CZ")
+            let raw = Date().formatted(
+                Date.FormatStyle()
+                    .locale(csLocale)
+                    .month(.wide)
+                    .year(.defaultDigits)
+            )
+            return raw.prefix(1).uppercased() + raw.dropFirst()
+        }
+    }
+}
+
+// MARK: - Background-only sheen sweep (clipped inside background)
+private struct SheenBackgroundSweep: View {
+    var active: Bool
+    var cornerRadius: CGFloat
+
+    @State private var progress: CGFloat = -0.35
+
+    var body: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+            let bandWidth = w * 0.30
+            let travel = w + bandWidth
+
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: .clear, location: 0.00),
+                            .init(color: .white.opacity(0.10), location: 0.42),
+                            .init(color: .white.opacity(0.22), location: 0.50),
+                            .init(color: .white.opacity(0.10), location: 0.58),
+                            .init(color: .clear, location: 1.00)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: bandWidth, height: h * 1.6)
+                .rotationEffect(.degrees(18))
+                .offset(x: progress * travel, y: -h * 0.28)
+                .opacity(active ? 1 : 0)
+                .allowsHitTesting(false)
+                .onChange(of: active) { _, new in
+                    if new {
+                        progress = -0.35
+                        withAnimation(.easeInOut(duration: 0.9)) {
+                            progress = 1.15
+                        }
+                    }
+                }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
