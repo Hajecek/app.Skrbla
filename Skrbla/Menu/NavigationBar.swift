@@ -263,6 +263,18 @@ struct MainContentView<Content: View>: View {
                 }
             }
         }
+        // Bottom accessory mimic for iOS < 26: show everywhere except Home (index 0)
+        .overlay(alignment: .bottom) {
+            if selectedTab != 0 {
+                // Position just above our custom bar
+                SearchAccessoryButton {
+                    // TODO: přidej konkrétní navigaci/akci
+                }
+                .padding(.bottom, 84) // height of bar + spacing to float above
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.36, dampingFraction: 0.86), value: selectedTab)
+            }
+        }
         .overlay(alignment: .bottom) {
             ModernBottomNavigationBar(selectedTab: $selectedTab, tabs: tabs)
         }
@@ -282,16 +294,16 @@ struct iOS26TabContainer: View {
             }
             Tab("Historie", systemImage: "clock", value: 2) {
                 HistoryView()
-                    .tag(1)
+                    .tag(2)
             }
             Tab("Profil", systemImage: "person", value: 3) {
                 ProfileView()
-                    .tag(2)
+                    .tag(3)
             }
             // Volitelný systémově oddělený Search tab (smazat, pokud ho nechceš)
             Tab("Hledat", systemImage: "plus", value: 4, role: .search) {
                 ProfileView()
-                    .tag(3)
+                    .tag(4)
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -299,6 +311,16 @@ struct iOS26TabContainer: View {
         .toolbarBackground(Color("TabColor"), for: .tabBar) // Pozadí tabbaru z Assets
         .toolbarBackground(.visible, for: .tabBar)
         .tint(Color("TabColor")) // zvýraznění aktivní ikony a dalších akcentů
+        // Native bottom accessory: show on all tabs except Home (index 0)
+        .tabViewBottomAccessory {
+            if selectedTab != 0 {
+                SearchAccessoryButton {
+                    // TODO: přidej konkrétní navigaci/akci
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
+            }
+        }
     }
 }
 
