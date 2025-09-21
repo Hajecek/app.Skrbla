@@ -239,6 +239,7 @@ private struct RoundGlassButton: View {
 struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
     @State private var showPlusSheet: Bool = false
+    @State private var showManualAdd: Bool = false
     let tabs: [TabItem]
     let content: (Int, @escaping (Int) -> Void) -> Content
     
@@ -287,9 +288,11 @@ struct MainContentView<Content: View>: View {
         .sheet(isPresented: $showPlusSheet) {
             PlusQuickActionsSheet(
                 onAddManual: {
-                    // Např. přepnout na tab "Přidat" nebo otevřít AddView
-                    selectedTab = 1
+                    // Otevřít ruční přidání v plné obrazovce
                     showPlusSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        showManualAdd = true
+                    }
                 },
                 onScanBarcode: {
                     // TODO: Napojit skener
@@ -304,6 +307,18 @@ struct MainContentView<Content: View>: View {
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(20)
         }
+        .fullScreenCover(isPresented: $showManualAdd) {
+            ManualAddView(
+                onContinue: { _ in
+                    // TODO: zpracování částky a návrat
+                    showManualAdd = false
+                },
+                onClose: {
+                    showManualAdd = false
+                }
+            )
+            .preferredColorScheme(.dark)
+        }
     }
 }
 
@@ -313,6 +328,7 @@ struct iOS26TabContainer: View {
     @State private var selectedTab: Int = 0
     @State private var lastNonPlusTab: Int = 0
     @State private var showPlusSheet: Bool = false
+    @State private var showManualAdd: Bool = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -368,8 +384,10 @@ struct iOS26TabContainer: View {
         .sheet(isPresented: $showPlusSheet) {
             PlusQuickActionsSheet(
                 onAddManual: {
-                    selectedTab = 1 // přepnout na „Přidat“ tab (pokud ho v iOS26 používáš)
                     showPlusSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        showManualAdd = true
+                    }
                 },
                 onScanBarcode: {
                     showPlusSheet = false
@@ -381,6 +399,17 @@ struct iOS26TabContainer: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(20)
+        }
+        .fullScreenCover(isPresented: $showManualAdd) {
+            ManualAddView(
+                onContinue: { _ in
+                    showManualAdd = false
+                },
+                onClose: {
+                    showManualAdd = false
+                }
+            )
+            .preferredColorScheme(.dark)
         }
     }
 }
