@@ -148,17 +148,20 @@ private struct MonthlySpendingCard: View {
             }
             .frame(width: 44, height: 44)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(monthTitle)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
+                // Dominantní částka
                 Text(formattedAmount(amount))
-                    .font(.title3.weight(.semibold))
+                    .font(.largeTitle.weight(.bold))
                     .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
 
                 Text("Utraceno v aktuálním měsíci")
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
 
