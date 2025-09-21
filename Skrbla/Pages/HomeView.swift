@@ -28,13 +28,19 @@ struct HomeView: View {
     // Animace horního zeleného pozadí
     @State private var backgroundReveal: CGFloat = 0
     @State private var backgroundOpacity: CGFloat = 0
+    @State private var gradientOffset: CGFloat = -24
+
+    // Animace karty
+    @State private var cardOpacity: CGFloat = 0
+    @State private var cardScale: CGFloat = 0.96
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Zelené pozadí s příjezdovou animací (výška + opacita)
+                // Zelené pozadí s příjezdovou animací (výška + opacita + jemný parallax offset)
                 GradientBackground(opacity: backgroundOpacity)
                     .frame(height: backgroundReveal)
+                    .offset(y: gradientOffset)
                     .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
                 
@@ -74,6 +80,8 @@ struct HomeView: View {
                             budget: monthlyBudget,
                             currencyCode: Locale.current.currency?.identifier
                         )
+                        .opacity(cardOpacity)
+                        .scaleEffect(cardScale, anchor: .top)
                     }
                     .buttonStyle(.plain)
                     .padding(.top, verticalSpacingBetweenHeaderAndCard)
@@ -90,13 +98,25 @@ struct HomeView: View {
                 // Reset pro případ návratu na obrazovku
                 backgroundReveal = 0
                 backgroundOpacity = 0
+                gradientOffset = -24
+                cardOpacity = 0
+                cardScale = 0.96
                 
-                // Rychlejší rozvinutí výšky, pak jemné dofadeování
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0.2)) {
+                // 1) Gradient – výška (spring) + opacita (ease)
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.9, blendDuration: 0.2)) {
                     backgroundReveal = greenBackgroundHeight
                 }
-                withAnimation(.easeOut(duration: 0.35).delay(0.05)) {
+                withAnimation(.easeOut(duration: 0.38).delay(0.03)) {
                     backgroundOpacity = 1
+                }
+                // 2) Gradient – jemný posun dolů pro parallax dojem
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.88, blendDuration: 0.2).delay(0.02)) {
+                    gradientOffset = 0
+                }
+                // 3) Karta – fade + scale s malým zpožděním za gradientem
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.92, blendDuration: 0.2).delay(0.12)) {
+                    cardOpacity = 1
+                    cardScale = 1.0
                 }
             }
         }
