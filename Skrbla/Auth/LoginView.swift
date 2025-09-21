@@ -24,103 +24,83 @@ struct LoginView: View {
             
             VStack(spacing: 20) {
                 Spacer(minLength: 20)
+                    .frame(maxHeight: .infinity)
                 
-                // Logo / Branding
-                Image(colorScheme == .dark ? "LogoDark" : "Logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 88, height: 88)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .padding(.bottom, 6)
-                
-                Text("Přihlášení")
-                    .font(.largeTitle.bold())
-                
-                Text("Přihlas se ke svému účtu, abychom mohli synchronizovat tvoje data.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-                
-                // Form
-                VStack(spacing: 14) {
-                    TextField("E‑mail", text: $email)
-                        .textContentType(.username)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+                VStack(spacing: 20) {
+                    // Logo / Branding
+                    Image(colorScheme == .dark ? "LogoDark" : "Logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 88, height: 88)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .padding(.bottom, 6)
                     
-                    SecureField("Heslo", text: $password)
-                        .textContentType(.password)
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 20)
-                        .multilineTextAlignment(.center)
-                }
-                
-                Button {
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    login()
-                } label: {
-                    HStack {
-                        if isLoading {
-                            ProgressView().tint(.white)
+                    Text("Přihlášení")
+                        .font(.largeTitle.bold())
+                    
+                    // Form
+                    VStack(spacing: 14) {
+                        TextField("E‑mail", text: $email)
+                            .textContentType(.username)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                            .padding(14)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+                        
+                        SecureField("Heslo", text: $password)
+                            .textContentType(.password)
+                            .padding(14)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 20)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    Button {
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                        login()
+                    } label: {
+                        HStack {
+                            if isLoading {
+                                ProgressView().tint(.white)
+                            }
+                            Text("Přihlásit se")
+                                .fontWeight(.semibold)
                         }
-                        Text("Přihlásit se")
-                            .fontWeight(.semibold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .foregroundStyle(.white)
-                }
-                .padding(.horizontal, 20)
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
-                .opacity(isLoading || email.isEmpty || password.isEmpty ? 0.7 : 1)
-                
-                // Volitelné: biometrie jako rychlý vstup
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    authManager.authenticateWithBiometrics()
-                } label: {
-                    Label("Ověřit biometricky (\(authManager.getBiometricTypeString()))", systemImage: "faceid")
                         .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .padding(.horizontal, 20)
-                .padding(.top, 6)
-                
-                Spacer()
-                
-                // Linky
-                VStack(spacing: 8) {
-                    Button("Zapomenuté heslo?") {
-                        // TODO: reset hesla
+                        .padding(.vertical, 14)
+                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .foregroundStyle(.white)
                     }
-                    .font(.footnote)
+                    .padding(.horizontal, 20)
+                    .disabled(isLoading || email.isEmpty || password.isEmpty)
+                    .opacity(isLoading || email.isEmpty || password.isEmpty ? 0.7 : 1)
                     
-                    Button("Vytvořit nový účet") {
-                        // TODO: registrace
+                    // Linky
+                    VStack(spacing: 8) {
+                        Button("Zapomenuté heslo?") {
+                            // TODO: reset hesla
+                        }
+                        .font(.footnote)
+                        
+                        Button("Vytvořit nový účet") {
+                            // TODO: registrace
+                        }
+                        .font(.footnote)
                     }
-                    .font(.footnote)
+                    .padding(.bottom, 4)
                 }
-                .padding(.bottom, 16)
-            }
-        }
-        .onReceive(authManager.$isAuthenticated) { isAuthed in
-            if isAuthed {
-                // Pokud se uživatel ověřil biometricky i z LoginView, považuj to za úspěch prvního přihlášení
-                isFirstLaunch = false
+                
+                Spacer(minLength: 20)
+                    .frame(maxHeight: .infinity)
             }
         }
     }
