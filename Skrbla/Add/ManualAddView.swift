@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-struct AmountInputView: View {
+struct ManualAddView: View {
     @State private var rawInput: String = "" // Stores digits and optional decimal separator
     @State private var isFocused: Bool = true
     @State private var amountScale: CGFloat = 1.0
@@ -336,7 +336,7 @@ struct AmountInputView: View {
 struct AmountInputView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            AmountInputView()
+            ManualAddView()
                 .preferredColorScheme(.dark)
         }
     }
@@ -384,7 +384,7 @@ private enum Haptics {
 }
 
 // MARK: - Logging
-private extension AmountInputView {
+private extension ManualAddView {
     func logAmountToConsole() {
         let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: "cs_CZ")
