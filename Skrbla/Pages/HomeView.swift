@@ -21,7 +21,7 @@ struct HomeView: View {
     private let headerHeight: CGFloat = 44 /* titulek + podtitulek + odskoky */
     private let headerTopPadding: CGFloat = 12
     private let headerBottomPadding: CGFloat = 14
-    private let cardEstimatedHeight: CGFloat = 160 /* navýšeno kvůli progress baru */
+    private let cardEstimatedHeight: CGFloat = 100 /* sníženo, karta je nyní jednodušší */
     private let verticalSpacingBetweenHeaderAndCard: CGFloat = 20
     private let horizontalPadding: CGFloat = 20
 
@@ -97,38 +97,14 @@ private struct MonthlySpendingCard: View {
     let amount: Decimal
     let budget: Decimal
     let currencyCode: String?
-    
-    private var progress: Double {
-        let spent = NSDecimalNumber(decimal: amount).doubleValue
-        let cap = max(NSDecimalNumber(decimal: budget).doubleValue, 0.01) // vyhnout se dělení nulou
-        return min(max(spent / cap, 0), 1.5) // povolíme lehké přesáhnutí (až 150 %) pro vizuální indikaci
-    }
-    
-    private var progressClamped01: Double {
-        min(max(progress, 0), 1)
-    }
-    
-    private var remaining: Decimal {
-        max(budget - amount, 0)
-    }
-    
-    private var exceeded: Decimal {
-        max(amount - budget, 0)
-    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
+            // Horní řádek: název měsíce a případná ikonka
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(monthTitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    // Velká částka v systémovém fontu
-                    Text(formattedAmount(amount))
-                        .font(.title.weight(.semibold))
-                        .monospacedDigit()
-                }
+                Text(monthTitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -138,60 +114,13 @@ private struct MonthlySpendingCard: View {
                     .foregroundStyle(.tint)
                     .opacity(0.9)
             }
-            
-            // Progress header: "Rozpočet" + procenta
-            HStack(alignment: .firstTextBaseline) {
-                Text("Rozpočet")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(Int(progressClamped01 * 100))%")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundColor(progressColor)
-                    .monospacedDigit()
-            }
-            
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(progressTrackColor)
-                        .frame(height: 10)
-                    
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(progressGradient)
-                        .frame(width: geo.size.width * progressClamped01, height: 10)
-                        .animation(.easeInOut(duration: 0.3), value: progressClamped01)
-                }
-            }
-            .frame(height: 10)
-            
-            // Remaining / exceeded
-            HStack(spacing: 6) {
-                if exceeded > 0 {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.footnote.weight(.bold))
-                        .foregroundColor(.red)
-                    Text("Překročeno o \(formattedAmount(exceeded))")
-                        .font(.footnote.weight(.medium))
-                        .foregroundColor(.red)
-                } else {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.green)
-                    Text("Zbývá \(formattedAmount(remaining))")
-                        .font(.footnote.weight(.medium))
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Text("z \(formattedAmount(budget))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
 
-            // Volitelný podřádek s doplňujícím textem
+            // Velká částka v systémovém fontu
+            Text(formattedAmount(amount))
+                .font(.title.weight(.semibold))
+                .monospacedDigit()
+
+            // Popisek pod částkou
             Text("Utraceno v aktuálním měsíci")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -207,31 +136,6 @@ private struct MonthlySpendingCard: View {
                 .fill(Color.primary.opacity(0.04))
         )
         .padding(.horizontal, 20)
-    }
-    
-    private var progressTrackColor: Color {
-        Color.primary.opacity(0.08)
-    }
-    
-    private var progressColor: Color {
-        switch progress {
-        case ..<0.8: return .blue
-        case ..<1.0: return .orange
-        default: return .red
-        }
-    }
-    
-    private var progressGradient: LinearGradient {
-        let colors: [Color]
-        switch progress {
-        case ..<0.8:
-            colors = [.blue, .cyan]
-        case ..<1.0:
-            colors = [.orange, .yellow]
-        default:
-            colors = [.red, .orange]
-        }
-        return LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing)
     }
 
     private func formattedAmount(_ value: Decimal) -> String {
