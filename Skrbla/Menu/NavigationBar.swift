@@ -240,6 +240,7 @@ struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
     @State private var showPlusSheet: Bool = false
     @State private var showManualAdd: Bool = false
+    @State private var showVoiceAdd: Bool = false
     let tabs: [TabItem]
     let content: (Int, @escaping (Int) -> Void) -> Content
     
@@ -298,9 +299,11 @@ struct MainContentView<Content: View>: View {
                     // TODO: Napojit skener
                     showPlusSheet = false
                 },
-                onRecognizeImage: {
-                    // TODO: Napojit rozpoznávání
+                onVoiceInput: {
                     showPlusSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        showVoiceAdd = true
+                    }
                 }
             )
             .presentationDetents([.medium, .large])
@@ -319,6 +322,10 @@ struct MainContentView<Content: View>: View {
             )
             .preferredColorScheme(.dark)
         }
+        .fullScreenCover(isPresented: $showVoiceAdd) {
+            AddScreenTestView()
+                .preferredColorScheme(.dark)
+        }
     }
 }
 
@@ -329,6 +336,7 @@ struct iOS26TabContainer: View {
     @State private var lastNonPlusTab: Int = 0
     @State private var showPlusSheet: Bool = false
     @State private var showManualAdd: Bool = false
+    @State private var showVoiceAdd: Bool = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -392,8 +400,11 @@ struct iOS26TabContainer: View {
                 onScanBarcode: {
                     showPlusSheet = false
                 },
-                onRecognizeImage: {
+                onVoiceInput: {
                     showPlusSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        showVoiceAdd = true
+                    }
                 }
             )
             .presentationDetents([.medium, .large])
@@ -410,6 +421,10 @@ struct iOS26TabContainer: View {
                 }
             )
             .preferredColorScheme(.dark)
+        }
+        .fullScreenCover(isPresented: $showVoiceAdd) {
+            AddScreenTestView()
+                .preferredColorScheme(.dark)
         }
     }
 }
@@ -457,7 +472,7 @@ struct MonthlySpentAccessory: View {
 private struct PlusQuickActionsSheet: View {
     var onAddManual: () -> Void
     var onScanBarcode: () -> Void
-    var onRecognizeImage: () -> Void
+    var onVoiceInput: () -> Void
     
     @Environment(\.dismiss) private var dismiss
     
@@ -473,9 +488,9 @@ private struct PlusQuickActionsSheet: View {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         onScanBarcode()
                     })
-                    ActionRow(title: "Rozpoznat z obrázku", subtitle: "Použít fotoaparát nebo knihovnu", systemImage: "camera.viewfinder", tint: .orange, action: {
+                    ActionRow(title: "Zadat hlasem", subtitle: "Diktujte částku a detaily", systemImage: "mic.fill", tint: .orange, action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onRecognizeImage()
+                        onVoiceInput()
                     })
                 }
             }
