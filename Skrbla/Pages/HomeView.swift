@@ -22,6 +22,7 @@ struct HomeView: View {
     private let headerBottomPadding: CGFloat = 8
     private let cardEstimatedHeight: CGFloat = 118 /* karta trochu vyšší kvůli novému layoutu */
     private let verticalSpacingBetweenHeaderAndCard: CGFloat = 18
+    private let verticalSpacingBetweenCardAndCategories: CGFloat = 20
     private let horizontalPadding: CGFloat = 20
 
     // Animace horního zeleného pozadí
@@ -41,13 +42,13 @@ struct HomeView: View {
     @State private var cardShadowBoost: CGFloat = 1.12 // násobič stínu při příjezdu
     @State private var triggerBackgroundSweep: Bool = false
 
-    // Jemný parallax podle polohy kurzoru/dotyku (bez CoreMotion)
+    // Jemný parallax (aktuálně neovládáme gestem, aby nevadil scrollu)
     @State private var parallax: CGSize = .zero
     
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Zelené pozadí – vícevrstvý gradient s highlightem, bez šumu, bez wipe masky
+                // Zelené pozadí – vícevrstvý gradient s highlightem
                 CleanGreenBackground(opacity: backgroundOpacity, pulse: backgroundPulse)
                     .frame(height: backgroundHeight)
                     .offset(x: parallax.width * 0.22,
@@ -59,7 +60,7 @@ struct HomeView: View {
                     .ignoresSafeArea(edges: .top)
                     .accessibilityHidden(true)
                     .overlay(
-                        // Jemná spodní vinetace pro hloubku (bez “přejezdu”)
+                        // Jemná spodní vinetace pro hloubku
                         LinearGradient(
                             colors: [
                                 Color.black.opacity(0.0),
@@ -72,90 +73,93 @@ struct HomeView: View {
                         .padding(.top, -26)
                         .allowsHitTesting(false)
                     )
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                // Jemný parallax na základě dotyku/kurzoru
-                                let w = UIScreen.main.bounds.width
-                                let h = max(1, backgroundHeight)
-                                let px = (value.location.x / w - 0.5) * 14
-                                let py = (value.location.y / h - 0.5) * 10
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.92)) {
-                                    parallax = .init(width: px, height: py)
-                                }
-                            }
-                            .onEnded { _ in
-                                withAnimation(.spring(response: 0.55, dampingFraction: 0.92)) {
-                                    parallax = .zero
-                                }
-                            }
-                    )
                 
-                VStack(spacing: 0) {
-                    // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Vítej zpátky 👋")
-                                .font(.largeTitle.weight(.bold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        // Horní lišta: nadpis vlevo, profil vpravo (stejná úroveň)
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Vítej zpátky 👋")
+                                    .font(.largeTitle.weight(.bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
 
-                            Text("Rád tě zase vidím")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
-
-                        Spacer()
-
-                        Button {
-                            // Akce profilu
-                        } label: {
-                            ProfileBadge(size: 44, symbolSize: 22)
-                        }
-                        .accessibilityLabel("Profil")
-                    }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, headerTopPadding)
-                    .padding(.bottom, headerBottomPadding)
-                    .opacity(headerOpacity)
-                    .offset(y: headerOffsetY)
-                    .rotation3DEffect(.degrees(headerTilt), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.6)
-
-                    // Karta s měsíční útratou -> po kliknutí přepne na Historii
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            cardScale = 0.98
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
-                                cardScale = 1.0
+                                Text("Rád tě zase vidím")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
-                        }
-                        onOpenHistory()
-                    }) {
-                        MonthlySpendingCard(
-                            amount: finance.monthlySpent,
-                            budget: finance.monthlyBudget,
-                            currencyCode: finance.currencyCode,
-                            backgroundSweep: triggerBackgroundSweep
-                        )
-                        .opacity(cardOpacity)
-                        .scaleEffect(cardScale, anchor: .top)
-                        .shadow(color: Color.black.opacity(0.10 * cardShadowBoost),
-                                radius: 14 * cardShadowBoost,
-                                x: 0, y: 8 * cardShadowBoost)
-                        .offset(x: parallax.width * 0.06, y: parallax.height * 0.05)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, verticalSpacingBetweenHeaderAndCard)
-                    .padding(.horizontal, horizontalPadding)
-                    .accessibilityHint("Otevřít historii výdajů za tento měsíc")
 
-                    Spacer(minLength: 0)
+                            Spacer()
+
+                            Button {
+                                // Akce profilu
+                            } label: {
+                                ProfileBadge(size: 44, symbolSize: 22)
+                            }
+                            .accessibilityLabel("Profil")
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, headerTopPadding)
+                        .padding(.bottom, headerBottomPadding)
+                        .opacity(headerOpacity)
+                        .offset(y: headerOffsetY)
+                        .rotation3DEffect(.degrees(headerTilt), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.6)
+
+                        // Karta s měsíční útratou -> po kliknutí přepne na Historii
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                cardScale = 0.98
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                                    cardScale = 1.0
+                                }
+                            }
+                            onOpenHistory()
+                        }) {
+                            MonthlySpendingCard(
+                                amount: finance.monthlySpent,
+                                budget: finance.monthlyBudget,
+                                currencyCode: finance.currencyCode,
+                                backgroundSweep: triggerBackgroundSweep
+                            )
+                            .opacity(cardOpacity)
+                            .scaleEffect(cardScale, anchor: .top)
+                            .shadow(color: Color.black.opacity(0.10 * cardShadowBoost),
+                                    radius: 14 * cardShadowBoost,
+                                    x: 0, y: 8 * cardShadowBoost)
+                            .offset(x: parallax.width * 0.06, y: parallax.height * 0.05)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, verticalSpacingBetweenHeaderAndCard)
+                        .padding(.horizontal, horizontalPadding)
+                        .accessibilityHint("Otevřít historii výdajů za tento měsíc")
+                        
+                        // Sekce: Kategorie (samostatně pod zeleným pozadím)
+                        CategoriesSection(
+                            categories: finance.topCategories,
+                            currencyCode: finance.currencyCode,
+                            horizontalPadding: horizontalPadding,
+                            parallax: parallax,
+                            onSelect: { _ in
+                                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                                onOpenHistory()
+                            },
+                            onShowAll: {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                onOpenHistory()
+                            }
+                        )
+                        .padding(.top, verticalSpacingBetweenCardAndCategories)
+
+                        // Spodní mezera pro “dýchání” obsahu
+                        Spacer(minLength: 24)
+                    }
                 }
+                .scrollIndicators(.hidden)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
@@ -166,10 +170,13 @@ struct HomeView: View {
         }
     }
     
-    // Výpočet výšky zeleného pozadí tak, aby pokrylo banner + mezeru + kartu
+    // Výpočet výšky zeleného pozadí tak, aby pokrylo banner + mezeru + kartu (ne kategorie)
     private var greenBackgroundHeight: CGFloat {
         let bannerApproxHeight = headerHeight + headerTopPadding + headerBottomPadding
-        let total = bannerApproxHeight + verticalSpacingBetweenHeaderAndCard + cardEstimatedHeight + 72 /* rezerva */
+        let total = bannerApproxHeight
+        + verticalSpacingBetweenHeaderAndCard
+        + cardEstimatedHeight
+        + 72 /* rezerva */
         return total
     }
     
@@ -336,8 +343,8 @@ private struct MonthlySpendingCard: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
-                    // Dominantní částka
-                    Text(formattedAmount(amount))
+                    // Dominantní částka (s ISO kódem měny, např. CZK)
+                    Text(formattedAmountWithCode(amount))
                         .font(.largeTitle.weight(.bold))
                         .monospacedDigit()
                         .minimumScaleFactor(0.7)
@@ -357,10 +364,10 @@ private struct MonthlySpendingCard: View {
             }
         }
 
-        private func formattedAmount(_ value: Decimal) -> String {
+        private func formattedAmountWithCode(_ value: Decimal) -> String {
             let code = currencyCode ?? "CZK"
             let doubleValue = NSDecimalNumber(decimal: value).doubleValue
-            return doubleValue.formatted(.currency(code: code))
+            return doubleValue.formatted(.currency(code: code).presentation(.isoCode))
         }
         
         private var monthTitle: String {
@@ -441,6 +448,179 @@ private struct ProfileBadge: View {
                 .foregroundStyle(.tint)
         }
         .contentShape(Circle())
+    }
+}
+
+// MARK: - Categories Section
+private struct CategoriesSection: View {
+    let categories: [CategorySummary]
+    let currencyCode: String
+    let horizontalPadding: CGFloat
+    let parallax: CGSize
+    var onSelect: (CategorySummary) -> Void
+    var onShowAll: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Kategorie")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    onShowAll()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Zobrazit vše")
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .tint(.accentColor)
+                .accessibilityLabel("Zobrazit všechny kategorie")
+            }
+            .padding(.horizontal, horizontalPadding)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(categories) { cat in
+                        Button {
+                            onSelect(cat)
+                        } label: {
+                            CategoryChip(category: cat, currencyCode: currencyCode)
+                                .offset(x: parallax.width * 0.03, y: parallax.height * 0.02)
+                        }
+                        .buttonStyle(ScaleOnPressStyle(scale: 0.96))
+                        .accessibilityLabel("\(cat.name), \(formattedAmountWithCode(cat.spent, code: currencyCode))")
+                    }
+                }
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, 4)
+            }
+        }
+    }
+    
+    private func formattedAmountWithCode(_ value: Decimal, code: String) -> String {
+        NSDecimalNumber(decimal: value).doubleValue.formatted(.currency(code: code).presentation(.isoCode))
+    }
+}
+
+// MARK: - Category Chip
+private struct CategoryChip: View {
+    let category: CategorySummary
+    let currencyCode: String
+    
+    private let cornerRadius: CGFloat = 16
+    private let contentPadding: CGFloat = 12
+    private let iconContainerSize: CGFloat = 36
+    private let minWidth: CGFloat = 176
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(category.tint.opacity(0.18))
+                    Image(systemName: category.symbol)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(category.tint)
+                }
+                .frame(width: iconContainerSize, height: iconContainerSize)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(category.name)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    // Částka s ISO kódem (CZK) – necháme ji mít vyšší prioritu na šířku
+                    Text(formattedAmountWithCode(category.spent))
+                        .font(.headline.weight(.semibold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.95)
+                        .layoutPriority(1)
+                }
+                Spacer(minLength: 0)
+            }
+            
+            // Progress (pokud existuje budget)
+            if let budget = category.budget {
+                ProgressBar(progress: progressValue(spent: category.spent, budget: budget), tint: category.tint)
+            }
+        }
+        .padding(contentPadding)
+        .frame(minWidth: minWidth, alignment: .leading) // umožní se roztáhnout podle obsahu
+        .background(
+            Group {
+                if #available(iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(.clear)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .fill(category.tint.opacity(0.14))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .strokeBorder(category.tint.opacity(0.26), lineWidth: 0.8)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .fill(category.tint.opacity(0.12))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .strokeBorder(category.tint.opacity(0.22), lineWidth: 0.8)
+                        )
+                        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                }
+            }
+        )
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+    
+    private func formattedAmountWithCode(_ value: Decimal) -> String {
+        NSDecimalNumber(decimal: value).doubleValue.formatted(.currency(code: currencyCode).presentation(.isoCode))
+    }
+    
+    private func progressValue(spent: Decimal, budget: Decimal) -> Double {
+        let b = NSDecimalNumber(decimal: budget).doubleValue
+        guard b > 0 else { return 0 }
+        let s = NSDecimalNumber(decimal: spent).doubleValue
+        return min(max(s / b, 0), 1)
+    }
+    
+    private struct ProgressBar: View {
+        let progress: Double
+        let tint: Color
+        
+        var body: some View {
+            GeometryReader { geo in
+                let w = geo.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.primary.opacity(0.06))
+                    Capsule()
+                        .fill(LinearGradient(colors: [tint, tint.opacity(0.6)], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(6, w * progress))
+                }
+            }
+            .frame(height: 6)
+        }
+    }
+}
+
+// MARK: - Scale on press button style
+private struct ScaleOnPressStyle: ButtonStyle {
+    var scale: CGFloat = 0.96
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(.spring(response: 0.22, dampingFraction: 0.8), value: configuration.isPressed)
     }
 }
 
