@@ -20,7 +20,7 @@ struct ManualAddView: View {
 
     private let currencySymbol: String = "Kč"
     private let maxFractionDigits = 2
-    private let continueTopSpacing: CGFloat = 48
+    private let continueTopSpacing: CGFloat = 72
 
     private var decimalSeparator: String { Locale.current.decimalSeparator ?? "," }
 
