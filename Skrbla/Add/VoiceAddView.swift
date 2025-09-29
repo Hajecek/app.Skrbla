@@ -4,6 +4,7 @@ import AVFoundation
 
 struct AddScreenTestView: View {
     let onAdd: (Transaction) -> Void
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var speech = SpeechRecognizer()
     @State private var isRecording = false
     @State private var transcript: String = ""
@@ -178,6 +179,7 @@ struct AddScreenTestView: View {
                         // Zastavení animací
                         animationOffset = 0
                         animationPhase = 0
+                        dismiss()
                     }) {
                         ZStack {
                             Circle()
