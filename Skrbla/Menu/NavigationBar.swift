@@ -429,42 +429,11 @@ struct iOS26TabContainer: View {
     }
 }
 
-// MARK: - Monthly Spent Accessory (icon left, bigger amount right, full width)
+// MARK: - Monthly Spent Accessory (disabled – FinanceStore removed)
 struct MonthlySpentAccessory: View {
-    @EnvironmentObject var finance: FinanceStore
-    
-    private func formattedAmount(_ value: Decimal, code: String) -> String {
-        value.asDouble.formatted(.currency(code: code))
-    }
-    
     var body: some View {
-        HStack(spacing: 8) {
-            // Left icon
-            Image(systemName: "creditcard.fill")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
-                .alignmentGuide(.firstTextBaseline) { d in d[.bottom] }
-                .offset(y: -3) // optický posun ikonky výš (původně -1)
-            
-            Spacer(minLength: 10)
-            
-            // Right amount (slightly larger)
-            Text(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .alignmentGuide(.firstTextBaseline) { d in d[.bottom] }
-                .offset(y: -3) // stejný optický posun jako ikonka
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6) // o něco menší, aby se celý obsah posunul výš v rámci tab baru
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .frame(minHeight: 28)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Utraceno tento měsíc")
-        .accessibilityValue(formattedAmount(finance.monthlySpent, code: finance.currencyCode))
+        // Prázdné, protože FinanceStore byl odstraněn
+        EmptyView()
     }
 }
 
@@ -540,7 +509,6 @@ private struct PlusQuickActionsSheet: View {
     if #available(iOS 26.0, *) {
         iOS26TabContainer()
             .preferredColorScheme(.dark)
-            .environmentObject(FinanceStore())
     } else {
         MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
             switch selectedIndex {
@@ -557,6 +525,5 @@ private struct PlusQuickActionsSheet: View {
             }
         }
         .preferredColorScheme(.dark)
-        .environmentObject(FinanceStore())
     }
 }
