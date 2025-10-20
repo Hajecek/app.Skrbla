@@ -177,22 +177,28 @@ struct ManualAddView: View {
                 // Keypad
                 keypad
 
-                // Continue button
-                Button(action: {
-                    logAmountToConsole()
-                    onContinue(amountDecimal)
-                }) {
-                    Text("Continue")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(Color.green)
-                        .clipShape(Capsule())
-                        .padding(.horizontal, 24)
-                        .padding(.top, continueTopSpacing)
-                        .padding(.bottom, 24)
+                // Continue button with precise tap area
+                VStack(spacing: 0) {
+                    Button(action: {
+                        logAmountToConsole()
+                        onContinue(amountDecimal)
+                    }) {
+                        Text("Continue")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18) // vnitřní padding tlačítka
+                            .background(Color.green)
+                            .clipShape(Capsule())
+                    }
+                    // Tappable area omezená jen na kapsli
+                    .contentShape(Capsule())
+                    .buttonStyle(.plain)
                 }
+                // Vnější rozestupy přes kontejner, ne přes Button
+                .padding(.horizontal, 24)
+                .padding(.top, continueTopSpacing)
+                .padding(.bottom, 24)
             }
         }
         .onAppear { amountContainerWidth = UIScreen.main.bounds.width - 48 }
@@ -416,5 +422,3 @@ private extension View {
         .onPreferenceChange(SizePreferenceKey.self, perform: onChange)
     }
 }
-
-
