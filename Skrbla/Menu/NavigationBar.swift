@@ -348,23 +348,19 @@ struct iOS26TabContainer: View {
                 HistoryView()
                     .tag(2)
             }
-            Tab("Předplatné", systemImage: "calendar", value: 3) {
-                SubscriptionView()
+            Tab("Profil", systemImage: "person", value: 3) {
+                ProfileView()
                     .tag(3)
             }
-            Tab("Profil", systemImage: "person", value: 4) {
-                ProfileView()
-                    .tag(4)
-            }
             // Volitelný systémově oddělený Search tab -> používáme jako „Plus“ spouštěč sheetu
-            Tab("Hledat", systemImage: "plus", value: 5, role: .search) {
+            Tab("Hledat", systemImage: "plus", value: 4, role: .search) {
                 // Prázdný obsah, nikdy se nezobrazí – tap vyvolá sheet a výběr vrátíme zpět
                 EmptyView()
-                    .tag(5)
+                    .tag(4)
             }
         }
         .onChange(of: selectedTab) { _, newValue in
-            if newValue == 5 {
+            if newValue == 4 {
                 // Uživatel tapnul na „plus“ tab: otevři sheet a vrať tab zpět
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 showPlusSheet = true
