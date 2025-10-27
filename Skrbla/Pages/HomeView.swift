@@ -30,9 +30,9 @@ struct HomeView: View {
                         bars: weeklySteps,
                         selectedIndex: $selectedIndex
                     )
-                    .frame(height: 400)                // mírně nižší, ale vizuálně posunuté výš
+                    .frame(height: 400)
                     .padding(.horizontal, 24)
-                    .padding(.top, 12)                 // graf blíž k headeru
+                    .padding(.top, 12) // dny nebudeme posouvat – posouváme jen sloupce uvnitř
                     .padding(.bottom, 0)
                     
                     Spacer(minLength: 16)
@@ -150,7 +150,7 @@ struct DayBar: Identifiable {
     
     // CZ pořadí od pondělí
     static let mockCZ: [DayBar] = [
-        .init(day: "Po", value: 2300, color: .white.opacity(0.45)),
+        .init(day: "Po", value: 10, color: .white.opacity(0.45)),
         .init(day: "Út", value: 1100, color: .white.opacity(0.25)),
         .init(day: "St", value: 1200, color: .white.opacity(0.18)),
         .init(day: "Čt", value: 900,  color: .white.opacity(0.22)),
@@ -198,30 +198,47 @@ private struct WeeklyBarChart: View {
                 }
                 .frame(width: 34)
                 
-                // sloupce; uvnitř necháme spodní rezervu, aby se dny nepřekrývaly
+                // sloupce – posuneme je níž pomocí topReserved, dny zůstanou
                 GeometryReader { geo in
-                    let reservedBottom: CGFloat = 22 // místo pro dny
-                    let usableHeight = geo.size.height - reservedBottom
+                    let reservedBottom: CGFloat = 0   // minimální mezera pro popisky dnů
+                    let topReserved: CGFloat = 64     // VÍCE DOLŮ: větší horní rezerva jen pro sloupce
+                    let usableHeight = max(0, geo.size.height - reservedBottom - topReserved)
+                    
                     HStack(alignment: .bottom) {
                         ForEach(Array(bars.enumerated()), id: \.offset) { index, bar in
-                            let h = max(8, (bar.value / maxValue) * (usableHeight - 8))
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            let h = max(10, (bar.value / maxValue) * max(0, (usableHeight - 10)))
+                            
+                            // Sloupec
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.9),
-                                            Color.white.opacity(0.45)
+                                            Color.white.opacity(0.85),
+                                            Color.white.opacity(0.42)
                                         ],
                                         startPoint: .top,
                                         endPoint: .bottom
-                                    ).opacity(index == selectedIndex ? 1 : 0.6)
+                                    ).opacity(index == selectedIndex ? 1.0 : 0.7)
                                 )
-                                .frame(width: 26, height: h)
+                                .frame(width: 28, height: h)
+                                // Vnitřní jemný highlight (“skleněný” efekt)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
                                 )
-                                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 6)
+                                .overlay(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.16),
+                                            Color.white.opacity(0.0)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                )
+                                // Silnější měkký stín
+                                .shadow(color: .black.opacity(0.28), radius: 22, x: 0, y: 18)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -229,13 +246,35 @@ private struct WeeklyBarChart: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .bottom)
+                                // Spodní glow – malý a blízko dnům
+                                .background(
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [
+                                                        Color.white.opacity(index == selectedIndex ? 0.35 : 0.25),
+                                                        Color.white.opacity(0.0)
+                                                    ],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+                                            .frame(width: 40, height: 20)
+                                            .blur(radius: 14)
+                                            .offset(y: 4)
+                                            .opacity(0.9)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .bottom)
+                                )
                         }
                     }
+                    .padding(.top, topReserved) // posun pouze na sloupce
                 }
             }
             .padding(.leading, 0)
             
-            // spodní dny (CZ, od Po) – vždy viditelné
+            // spodní dny (CZ, od Po) – vždy viditelné, bez posunu
             HStack {
                 Spacer(minLength: 36)
                 ForEach(bars) { bar in
@@ -287,7 +326,9 @@ private struct BigStatsCard: View {
                         .font(.system(size: 64, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
                         .minimumScaleFactor(0.5)
-                    Image(systemName: "dollarsign.circle.fill")
+                    // Původní ikona dolaru byla nahrazena textem CZK
+                    Text("CZK")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
                 Text("CZK")
