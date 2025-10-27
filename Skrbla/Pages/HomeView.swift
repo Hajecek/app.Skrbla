@@ -30,12 +30,12 @@ struct HomeView: View {
                         bars: weeklySteps,
                         selectedIndex: $selectedIndex
                     )
-                    .frame(height: 420)                // vyšší graf
+                    .frame(height: 400)                // mírně nižší, ale vizuálně posunuté výš
                     .padding(.horizontal, 24)
-                    .padding(.top, 24)                 // více místa nad grafem
-                    .padding(.bottom, 8)
+                    .padding(.top, 12)                 // graf blíž k headeru
+                    .padding(.bottom, 0)
                     
-                    Spacer(minLength: 12)
+                    Spacer(minLength: 16)
                 }
                 
                 BigStatsCard(
@@ -164,31 +164,30 @@ private struct WeeklyBarChart: View {
     let bars: [DayBar]
     @Binding var selectedIndex: Int?
     
-    // hustší dělení 1K..17K
-    private let yTicks: [Int] = Array(stride(from: 17, through: 1, by: -1))
+    // volnější dělení s mezerami
+    private let yTicks: [Int] = [17, 13, 10, 8, 6, 5, 3, 2, 1]
     
     private var maxValue: Double {
         max(bars.map { $0.value }.max() ?? 1, 1)
     }
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             HStack(alignment: .top, spacing: 8) {
-                // levé popisky
+                // levé popisky + linky
                 VStack(alignment: .leading, spacing: 0) {
                     GeometryReader { geo in
                         let total = CGFloat(yTicks.count - 1)
                         ZStack(alignment: .topLeading) {
                             ForEach(Array(yTicks.enumerated()), id: \.offset) { idx, k in
                                 let y = (CGFloat(idx) / total) * (geo.size.height - 0.001)
-                                VStack(alignment: .leading, spacing: 0) {
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text("\(k)K")
                                         .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.white.opacity(0.45))
+                                        .foregroundStyle(.white.opacity(0.50))
                                         .offset(y: -8)
-                                    // jemná vodorovná linka
                                     Rectangle()
-                                        .fill(Color.white.opacity(k % 2 == 0 ? 0.06 : 0.035))
+                                        .fill(Color.white.opacity(k % 2 == 0 ? 0.06 : 0.03))
                                         .frame(height: 1)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -197,13 +196,15 @@ private struct WeeklyBarChart: View {
                         }
                     }
                 }
-                .frame(width: 32)
+                .frame(width: 34)
                 
-                // sloupce
+                // sloupce; uvnitř necháme spodní rezervu, aby se dny nepřekrývaly
                 GeometryReader { geo in
+                    let reservedBottom: CGFloat = 22 // místo pro dny
+                    let usableHeight = geo.size.height - reservedBottom
                     HStack(alignment: .bottom) {
                         ForEach(Array(bars.enumerated()), id: \.offset) { index, bar in
-                            let h = max(8, (bar.value / maxValue) * (geo.size.height - 8))
+                            let h = max(8, (bar.value / maxValue) * (usableHeight - 8))
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(
                                     LinearGradient(
@@ -227,24 +228,24 @@ private struct WeeklyBarChart: View {
                                         selectedIndex = index
                                     }
                                 }
-                                .frame(maxWidth: .infinity)
+                                .frame(maxWidth: .infinity, alignment: .bottom)
                         }
                     }
                 }
             }
-            .padding(.leading, 2)
+            .padding(.leading, 0)
             
-            // spodní dny (CZ, od Po)
+            // spodní dny (CZ, od Po) – vždy viditelné
             HStack {
                 Spacer(minLength: 36)
                 ForEach(bars) { bar in
                     Text(bar.day)
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.white.opacity(0.9))
                         .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.top, 6)
+            .padding(.top, 2)
         }
     }
 }
