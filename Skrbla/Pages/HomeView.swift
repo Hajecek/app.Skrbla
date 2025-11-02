@@ -326,14 +326,11 @@ private struct BigStatsCard: View {
                         .font(.system(size: 64, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
                         .minimumScaleFactor(0.5)
-                    // Původní ikona dolaru byla nahrazena textem CZK
                     Text("CZK")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
-                Text("CZK")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                // Původní samostatný řádek s "CZK" byl odstraněn
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
