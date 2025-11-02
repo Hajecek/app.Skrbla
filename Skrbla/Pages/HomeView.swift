@@ -32,7 +32,7 @@ struct HomeView: View {
                     )
                     .frame(height: 400)
                     .padding(.horizontal, 24)
-                    .padding(.top, 12) // dny nebudeme posouvat – posouváme jen sloupce uvnitř
+                    .padding(.top, 36) // posuneme celý graf níže
                     .padding(.bottom, 0)
                     
                     Spacer(minLength: 16)
