@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var selectedScope: Scope = .day
     @State private var weeklySteps: [DayBar] = DayBar.mockCZ
     @State private var selectedIndex: Int? = 0 // Po
+    @AppStorage("provisionalAmount") private var provisionalAmount: Int = 0
     
     var body: some View {
         NavigationStack {
@@ -40,7 +41,7 @@ struct HomeView: View {
                 
                 BigStatsCard(
                     scope: $selectedScope,
-                    steps: 715,
+                    steps: provisionalAmount,
                     distanceKm: 0.58,
                     calories: 93.5,
                     floors: 2,
@@ -330,7 +331,6 @@ private struct BigStatsCard: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
-                // Původní samostatný řádek s "CZK" byl odstraněn
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
