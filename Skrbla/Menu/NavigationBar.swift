@@ -52,7 +52,8 @@ struct ModernBottomNavigationBar: View {
     private let spacingBetweenPillAndButton: CGFloat = 12
     private let roundButtonSize: CGFloat = 64
     
-    private var tabColor: Color { Color("TabColor") }
+    // Lokální barva: bílá (nepoužíváme TabColor z Assets)
+    private var tabColor: Color { .white }
     
     var body: some View {
         HStack(spacing: spacingBetweenPillAndButton) {
@@ -86,7 +87,7 @@ struct ModernBottomNavigationBar: View {
                             .glassEffect(.regular, in: Capsule())
                             .overlay(
                                 Capsule()
-                                    .fill(tabColor.opacity(0.18)) // jemné tónování pozadí pilulky barvou z Assets
+                                    .fill(tabColor.opacity(0.18)) // jemné tónování pozadí pilulky bílou
                                     .clipShape(Capsule())
                             )
                             .overlay(
@@ -99,7 +100,7 @@ struct ModernBottomNavigationBar: View {
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 Capsule()
-                                    .fill(tabColor.opacity(0.16)) // jemné tónování pilulky
+                                    .fill(tabColor.opacity(0.16)) // jemné tónování pilulky bílou
                                     .clipShape(Capsule())
                             )
                             .overlay(
@@ -120,7 +121,7 @@ struct ModernBottomNavigationBar: View {
         }
         .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 8)
-        .tint(tabColor) // použijeme TabColor jako accent/tint
+        .tint(tabColor) // bílá jako accent/tint pro bar
         .ignoresSafeArea(edges: .bottom)
     }
 }
@@ -203,7 +204,7 @@ private struct RoundGlassButton: View {
                         .glassEffect(.regular, in: Circle())
                         .overlay(
                             Circle()
-                                .fill(tabColor.opacity(0.20)) // tónování kruhu TabColor
+                                .fill(tabColor.opacity(0.20)) // tónování kruhu bílou
                         )
                         .overlay(
                             Circle()
@@ -386,9 +387,10 @@ struct iOS26TabContainer: View {
         .tabViewStyle(.sidebarAdaptable)
         // Integrace accessory při sbalení tab baru během scrollu
         .tabBarMinimizeBehavior(.onScrollDown)
-        .toolbarBackground(Color("TabColor"), for: .tabBar) // Pozadí tabbaru z Assets
+        // Lokální bílé zvýraznění pro tab bar
+        .toolbarBackground(.clear, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        .tint(Color("TabColor")) // zvýraznění aktivní ikony a dalších akcentů
+        .tint(.white)
         // Native bottom accessory: show on all tabs except Home (index 0)
         .tabViewBottomAccessory {
             if selectedTab != 0 {
