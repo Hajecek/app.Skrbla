@@ -242,7 +242,6 @@ struct MainContentView<Content: View>: View {
     @State private var showPlusSheet: Bool = false
     @State private var showManualAdd: Bool = false
     @State private var showVoiceAdd: Bool = false
-    @State private var showProvisionalAdd: Bool = false
     let tabs: [TabItem]
     let content: (Int, @escaping (Int) -> Void) -> Content
     
@@ -306,12 +305,6 @@ struct MainContentView<Content: View>: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                         showVoiceAdd = true
                     }
-                },
-                onProvisionalAdd: {
-                    showPlusSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        showProvisionalAdd = true
-                    }
                 }
             )
             .presentationDetents([.medium, .large])
@@ -334,10 +327,6 @@ struct MainContentView<Content: View>: View {
             AddScreenTestView()
                 .preferredColorScheme(.dark)
         }
-        .fullScreenCover(isPresented: $showProvisionalAdd) {
-            ProvisionalAddView()
-                .preferredColorScheme(.dark)
-        }
     }
 }
 
@@ -349,7 +338,6 @@ struct iOS26TabContainer: View {
     @State private var showPlusSheet: Bool = false
     @State private var showManualAdd: Bool = false
     @State private var showVoiceAdd: Bool = false
-    @State private var showProvisionalAdd: Bool = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -415,12 +403,6 @@ struct iOS26TabContainer: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                         showVoiceAdd = true
                     }
-                },
-                onProvisionalAdd: {
-                    showPlusSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        showProvisionalAdd = true
-                    }
                 }
             )
             .presentationDetents([.medium, .large])
@@ -442,10 +424,6 @@ struct iOS26TabContainer: View {
             AddScreenTestView()
                 .preferredColorScheme(.dark)
         }
-        .fullScreenCover(isPresented: $showProvisionalAdd) {
-            ProvisionalAddView()
-                .preferredColorScheme(.dark)
-        }
     }
 }
 
@@ -462,7 +440,6 @@ private struct PlusQuickActionsSheet: View {
     var onAddManual: () -> Void
     var onScanBarcode: () -> Void
     var onVoiceInput: () -> Void
-    var onProvisionalAdd: () -> Void
     
     @Environment(\.dismiss) private var dismiss
     
@@ -481,10 +458,6 @@ private struct PlusQuickActionsSheet: View {
                     ActionRow(title: "Zadat hlasem", subtitle: "Diktujte částku a detaily", systemImage: "mic.fill", tint: .orange, action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         onVoiceInput()
-                    })
-                    ActionRow(title: "Provizorní přidání", subtitle: "Jednoduché uložení částky", systemImage: "plus.circle.fill", tint: .purple, action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onProvisionalAdd()
                     })
                 }
             }
