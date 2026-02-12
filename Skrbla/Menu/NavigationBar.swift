@@ -100,7 +100,7 @@ struct ModernBottomNavigationBar: View {
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 Capsule()
-                                    .fill(tabColor.opacity(0.16)) // jemné tónování pilulky bílou
+                                    .fill(tabColor.opacity(0.16)) // jemné tónování pozadí pilulky bílou
                                     .clipShape(Capsule())
                             )
                             .overlay(
@@ -439,56 +439,67 @@ struct MonthlySpentAccessory: View {
     }
 }
 
-// MARK: - Plus Quick Actions Sheet (HIG-aligned)
+// MARK: - Plus Quick Actions Sheet – kompletně přepracovaný iOS-like design
 private struct PlusQuickActionsSheet: View {
     var onAddManual: () -> Void
     var onScanBarcode: () -> Void
     var onVoiceInput: () -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var hSize
+    
+    private var gridColumns: [GridItem] {
+        // iPhone: 2 sloupce, širší obrazovky: 3
+        let count = (hSize == .regular) ? 3 : 2
+        return Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: count)
+    }
     
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    ActionRow(
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Primární doporučená akce (full-width)
+                    PrimaryActionCard(
                         title: "Přidat ručně",
                         subtitle: "Zadat částku a detaily",
-                        systemImage: "pencil.circle.fill",
-                        tint: .blue,
-                        action: {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            onAddManual()
-                        }
-                    )
+                        systemImage: "square.and.pencil",
+                        tint: .blue
+                    ) {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        onAddManual()
+                    }
                     .accessibilityAddTraits(.isButton)
                     
-                    ActionRow(
-                        title: "Skenovat čárový kód",
-                        subtitle: "Rychlé načtení z kódu",
-                        systemImage: "barcode.viewfinder",
-                        tint: .green,
-                        action: {
+                    // Grid sekundárních akcí
+                    LazyVGrid(columns: gridColumns, spacing: 12) {
+                        ActionCard(
+                            title: "Skenovat kód",
+                            subtitle: "Načíst z čárového kódu",
+                            systemImage: "barcode.viewfinder",
+                            tint: .green
+                        ) {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             onScanBarcode()
                         }
-                    )
-                    .accessibilityAddTraits(.isButton)
-                    
-                    ActionRow(
-                        title: "Zadat hlasem",
-                        subtitle: "Diktujte částku a detaily",
-                        systemImage: "mic.fill",
-                        tint: .orange,
-                        action: {
+                        .accessibilityAddTraits(.isButton)
+                        
+                        ActionCard(
+                            title: "Zadat hlasem",
+                            subtitle: "Diktujte částku a poznámku",
+                            systemImage: "mic.fill",
+                            tint: .orange
+                        ) {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             onVoiceInput()
                         }
-                    )
-                    .accessibilityAddTraits(.isButton)
+                        .accessibilityAddTraits(.isButton)
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            .listStyle(.insetGrouped)
+            .navigationTitle("Přidat položku")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -501,40 +512,131 @@ private struct PlusQuickActionsSheet: View {
         }
     }
     
-    private struct ActionRow: View {
+    // MARK: - Building Blocks
+    
+    private struct PrimaryActionCard: View {
         let title: String
         let subtitle: String
         let systemImage: String
         let tint: Color
         let action: () -> Void
         
+        @State private var pressed = false
+        
         var body: some View {
             Button(action: action) {
-                HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(tint.opacity(0.18))
-                        Image(systemName: systemImage)
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(tint)
-                    }
-                    .frame(width: 44, height: 44)
+                HStack(spacing: 14) {
+                    IconBadge(systemImage: systemImage, tint: tint, size: 52, symbolSize: 26)
                     
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(title)
-                            .font(.body.weight(.semibold))
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
                         Text(subtitle)
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(2)
                     }
                     Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.tertiary)
                 }
-                .contentShape(Rectangle())
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
+                        )
+                )
+                .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+                .scaleEffect(pressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.8), value: pressed)
             }
             .buttonStyle(.plain)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in pressed = true }
+                    .onEnded { _ in pressed = false }
+            )
             .accessibilityElement(children: .combine)
             .accessibilityLabel(title)
             .accessibilityHint(subtitle)
+        }
+    }
+    
+    private struct ActionCard: View {
+        let title: String
+        let subtitle: String
+        let systemImage: String
+        let tint: Color
+        let action: () -> Void
+        
+        @State private var pressed = false
+        
+        var body: some View {
+            Button(action: action) {
+                VStack(alignment: .leading, spacing: 12) {
+                    IconBadge(systemImage: systemImage, tint: tint, size: 48, symbolSize: 22)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(subtitle)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
+                        )
+                )
+                .shadow(color: .black.opacity(0.10), radius: 6, x: 0, y: 3)
+                .scaleEffect(pressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.8), value: pressed)
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in pressed = true }
+                    .onEnded { _ in pressed = false }
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(title)
+            .accessibilityHint(subtitle)
+        }
+    }
+    
+    private struct IconBadge: View {
+        let systemImage: String
+        let tint: Color
+        let size: CGFloat
+        let symbolSize: CGFloat
+        
+        var body: some View {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.16))
+                Image(systemName: systemImage)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: symbolSize, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
         }
     }
 }
@@ -574,4 +676,3 @@ private extension View {
         }
     }
 }
-
