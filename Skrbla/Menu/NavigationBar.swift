@@ -474,7 +474,7 @@ private struct PlusQuickActionsSheet: View {
                     LazyVGrid(columns: gridColumns, spacing: 12) {
                         ActionCard(
                             title: "Skenovat kód",
-                            subtitle: "Načíst z čárového kódu",
+                            subtitle: "Načíst částku z čárového kódu",
                             systemImage: "barcode.viewfinder",
                             tint: .green
                         ) {
