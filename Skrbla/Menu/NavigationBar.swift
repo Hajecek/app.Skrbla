@@ -309,7 +309,7 @@ struct MainContentView<Content: View>: View {
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
-            .presentationCornerRadius(20)
+            .presentationCornerRadius(46)
             .interactiveDismissDisabled(false)
             .applySheetBackgroundIfAvailable()
         }
@@ -409,7 +409,7 @@ struct iOS26TabContainer: View {
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
-            .presentationCornerRadius(20)
+            .presentationCornerRadius(46)
             .interactiveDismissDisabled(false)
             .applySheetBackgroundIfAvailable()
         }
@@ -575,3 +575,4 @@ private extension View {
         }
     }
 }
+
