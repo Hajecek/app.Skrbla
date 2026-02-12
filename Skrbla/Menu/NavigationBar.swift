@@ -310,6 +310,8 @@ struct MainContentView<Content: View>: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(20)
+            .interactiveDismissDisabled(false)
+            .applySheetBackgroundIfAvailable()
         }
         .fullScreenCover(isPresented: $showManualAdd) {
             ManualAddView(
@@ -408,6 +410,8 @@ struct iOS26TabContainer: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(20)
+            .interactiveDismissDisabled(false)
+            .applySheetBackgroundIfAvailable()
         }
         .fullScreenCover(isPresented: $showManualAdd) {
             ManualAddView(
@@ -435,7 +439,7 @@ struct MonthlySpentAccessory: View {
     }
 }
 
-// MARK: - Plus Quick Actions Sheet (inspirace „Najít“)
+// MARK: - Plus Quick Actions Sheet (HIG-aligned)
 private struct PlusQuickActionsSheet: View {
     var onAddManual: () -> Void
     var onScanBarcode: () -> Void
@@ -447,18 +451,52 @@ private struct PlusQuickActionsSheet: View {
         NavigationStack {
             List {
                 Section {
-                    ActionRow(title: "Přidat ručně", subtitle: "Zadat částku a detaily", systemImage: "pencil.circle.fill", tint: .blue, action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onAddManual()
-                    })
-                    ActionRow(title: "Skenovat čárový kód", subtitle: "Rychlé načtení z kódu", systemImage: "barcode.viewfinder", tint: .green, action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onScanBarcode()
-                    })
-                    ActionRow(title: "Zadat hlasem", subtitle: "Diktujte částku a detaily", systemImage: "mic.fill", tint: .orange, action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onVoiceInput()
-                    })
+                    ActionRow(
+                        title: "Přidat ručně",
+                        subtitle: "Zadat částku a detaily",
+                        systemImage: "pencil.circle.fill",
+                        tint: .blue,
+                        action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onAddManual()
+                        }
+                    )
+                    .accessibilityAddTraits(.isButton)
+                    
+                    ActionRow(
+                        title: "Skenovat čárový kód",
+                        subtitle: "Rychlé načtení z kódu",
+                        systemImage: "barcode.viewfinder",
+                        tint: .green,
+                        action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onScanBarcode()
+                        }
+                    )
+                    .accessibilityAddTraits(.isButton)
+                    
+                    ActionRow(
+                        title: "Zadat hlasem",
+                        subtitle: "Diktujte částku a detaily",
+                        systemImage: "mic.fill",
+                        tint: .orange,
+                        action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onVoiceInput()
+                        }
+                    )
+                    .accessibilityAddTraits(.isButton)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Přidat")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Zrušit", role: .cancel) {
+                        dismiss()
+                    }
+                    .accessibilityHint("Zavřít panel bez akce")
                 }
             }
         }
@@ -523,5 +561,17 @@ private struct PlusQuickActionsSheet: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+}
+
+// MARK: - Sheet background helper
+private extension View {
+    @ViewBuilder
+    func applySheetBackgroundIfAvailable() -> some View {
+        if #available(iOS 17.0, *) {
+            self.presentationBackground(.regularMaterial)
+        } else {
+            self
+        }
     }
 }
