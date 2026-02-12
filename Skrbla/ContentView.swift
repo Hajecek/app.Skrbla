@@ -21,15 +21,18 @@ struct ContentView: View {
                 MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
                     switch selectedIndex {
                     case 0:
-                        HomeView(onOpenHistory: { onSelectTab(2) })
+                        HomeView()
                     case 1:
-                        HistoryView()
+                        // Index 1 je "add" tlačítko - otevírá sheet, ne view
+                        EmptyView()
                     case 2:
-                        SubscriptionView()
+                        HistoryView()
                     case 3:
+                        SubscriptionView()
+                    case 4:
                         ProfileView()
                     default:
-                        HomeView(onOpenHistory: { onSelectTab(2) })
+                        HomeView()
                     }
                 }
             }

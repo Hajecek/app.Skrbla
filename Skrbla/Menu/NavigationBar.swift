@@ -68,10 +68,16 @@ struct ModernBottomNavigationBar: View {
                         iconSize: iconSize,
                         tabColor: tabColor
                     ) {
-                        withAnimation(.interpolatingSpring(stiffness: 520, damping: 32)) {
-                            selectedTab = index
+                        // Index 1 je "add" tlačítko - otevři sheet místo změny tabu
+                        if index == 1 {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            onPlusTapped()
+                        } else {
+                            withAnimation(.interpolatingSpring(stiffness: 520, damping: 32)) {
+                                selectedTab = index
+                            }
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         }
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -239,6 +245,7 @@ private struct RoundGlassButton: View {
 // MARK: - Main Content View with Floating Navigation (Fallback for iOS < 26)
 struct MainContentView<Content: View>: View {
     @State private var selectedTab: Int = 0
+    @State private var lastNonPlusTab: Int = 0
     @State private var showPlusSheet: Bool = false
     @State private var showManualAdd: Bool = false
     @State private var showVoiceAdd: Bool = false
@@ -269,6 +276,18 @@ struct MainContentView<Content: View>: View {
                         .animation(.interpolatingSpring(stiffness: 360, damping: 32), value: selectedTab)
                         .zIndex(selectedTab == index ? 1 : 0)
                 }
+            }
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            if newValue == 1 {
+                // Index 1 je "add" tlačítko - otevři sheet a vrať tab zpět
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                showPlusSheet = true
+                // Vrátíme vybraný tab zpět na poslední skutečný (aby UI nepřeskočilo)
+                selectedTab = lastNonPlusTab
+            } else {
+                // Uložíme si poslední skutečný tab (mimo plus)
+                lastNonPlusTab = newValue
             }
         }
         // Bottom accessory mimic for iOS < 26: show everywhere except Home (index 0)
@@ -344,27 +363,31 @@ struct iOS26TabContainer: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Domů", systemImage: "house", value: 0) {
-                HomeView(onOpenHistory: { selectedTab = 2 })
+                HomeView()
                     .tag(0)
             }
             Tab("Historie", systemImage: "clock", value: 2) {
                 HistoryView()
                     .tag(2)
             }
-            Tab("Profil", systemImage: "person", value: 3) {
-                ProfileView()
+            Tab("Předplatné", systemImage: "calendar", value: 3) {
+                SubscriptionView()
                     .tag(3)
             }
-            // Volitelný systémově oddělený Search tab -> používáme jako „Plus“ spouštěč sheetu
-            Tab("Hledat", systemImage: "plus", value: 4, role: .search) {
+            Tab("Profil", systemImage: "person", value: 4) {
+                ProfileView()
+                    .tag(4)
+            }
+            // Volitelný systémově oddělený Search tab -> používáme jako „Plus" spouštěč sheetu
+            Tab("Hledat", systemImage: "plus", value: 1, role: .search) {
                 // Prázdný obsah, nikdy se nezobrazí – tap vyvolá sheet a výběr vrátíme zpět
                 EmptyView()
-                    .tag(4)
+                    .tag(1)
             }
         }
         .onChange(of: selectedTab) { _, newValue in
-            if newValue == 4 {
-                // Uživatel tapnul na „plus“ tab: otevři sheet a vrať tab zpět
+            if newValue == 1 {
+                // Uživatel tapnul na „plus" tab: otevři sheet a vrať tab zpět
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 showPlusSheet = true
                 // Vrátíme vybraný tab zpět na poslední skutečný (aby UI nepřeskočilo)
@@ -650,15 +673,18 @@ private struct PlusQuickActionsSheet: View {
         MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
             switch selectedIndex {
             case 0:
-                HomeView(onOpenHistory: { onSelectTab(2) })
+                HomeView()
             case 1:
-                HistoryView()
+                // Index 1 je "add" tlačítko - otevírá sheet, ne view
+                EmptyView()
             case 2:
-                SubscriptionView()
+                HistoryView()
             case 3:
+                SubscriptionView()
+            case 4:
                 ProfileView()
             default:
-                HomeView(onOpenHistory: { onSelectTab(2) })
+                HomeView()
             }
         }
         .preferredColorScheme(.dark)
