@@ -92,61 +92,122 @@ private struct HomeTopBar: View {
     private var tint: Color { .white }
     
     var body: some View {
-        HStack(spacing: 10) {
-            // Avatar s indikací
-            GlassCircleButton(size: circleSize, tint: tint) {
-                ZStack {
-                    Image(systemName: "person.fill")
+        // GlassEffectContainer pro seskupení Liquid Glass elementů
+        // Umožňuje efektivní renderování a spojování elementů při animacích
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer {
+                HStack(spacing: 10) {
+                    // Avatar s indikací
+                    GlassCircleButton(size: circleSize, tint: tint) {
+                        ZStack {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: iconSize, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                    } action: {
+                        onAvatar()
+                    }
+                    .overlay(alignment: .topLeading) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                            .offset(x: -2, y: -2)
+                            .accessibilityHidden(true)
+                    }
+                    .accessibilityLabel("Profil")
+                    .accessibilityHint("Otevřít profil")
+                    
+                    // Hledání – roztažená pilulka
+                    SearchBarPill(height: searchHeight, tint: tint, placeholder: "Vyhledat") {
+                        onSearch()
+                    }
+                    .accessibilityLabel("Vyhledat")
+                    .accessibilityHint("Otevřít vyhledávání")
+                    
+                    // Pravé kruhové tlačítko (graf/statistiky)
+                    GlassCircleButton(size: circleSize, tint: tint) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                    } action: {
+                        onRightPrimary()
+                    }
+                    .accessibilityLabel("Statistiky")
+                    .accessibilityHint("Otevřít statistiky")
+                    
+                    // Pravé kruhové tlačítko (karta/účtenka)
+                    GlassCircleButton(size: circleSize, tint: tint) {
+                        Image(systemName: "creditcard.fill")
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                    } action: {
+                        onRightSecondary()
+                    }
+                    .accessibilityLabel("Karty")
+                    .accessibilityHint("Otevřít karty")
+                }
+                .tint(tint)
+            }
+        } else {
+            HStack(spacing: 10) {
+                // Avatar s indikací
+                GlassCircleButton(size: circleSize, tint: tint) {
+                    ZStack {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                } action: {
+                    onAvatar()
+                }
+                .overlay(alignment: .topLeading) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                        .offset(x: -2, y: -2)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityLabel("Profil")
+                .accessibilityHint("Otevřít profil")
+                
+                // Hledání – roztažená pilulka
+                SearchBarPill(height: searchHeight, tint: tint, placeholder: "Vyhledat") {
+                    onSearch()
+                }
+                .accessibilityLabel("Vyhledat")
+                .accessibilityHint("Otevřít vyhledávání")
+                
+                // Pravé kruhové tlačítko (graf/statistiky)
+                GlassCircleButton(size: circleSize, tint: tint) {
+                    Image(systemName: "chart.bar.fill")
                         .font(.system(size: iconSize, weight: .semibold))
                         .foregroundStyle(.white)
+                } action: {
+                    onRightPrimary()
                 }
-            } action: {
-                onAvatar()
+                .accessibilityLabel("Statistiky")
+                .accessibilityHint("Otevřít statistiky")
+                
+                // Pravé kruhové tlačítko (karta/účtenka)
+                GlassCircleButton(size: circleSize, tint: tint) {
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: iconSize, weight: .semibold))
+                        .foregroundStyle(.white)
+                } action: {
+                    onRightSecondary()
+                }
+                .accessibilityLabel("Karty")
+                .accessibilityHint("Otevřít karty")
             }
-            .overlay(alignment: .topLeading) {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 8, height: 8)
-                    .offset(x: -2, y: -2)
-                    .accessibilityHidden(true)
-            }
-            .accessibilityLabel("Profil")
-            .accessibilityHint("Otevřít profil")
-            
-            // Hledání – roztažená pilulka
-            SearchBarPill(height: searchHeight, tint: tint, placeholder: "Vyhledat") {
-                onSearch()
-            }
-            .accessibilityLabel("Vyhledat")
-            .accessibilityHint("Otevřít vyhledávání")
-            
-            // Pravé kruhové tlačítko (graf/statistiky)
-            GlassCircleButton(size: circleSize, tint: tint) {
-                Image(systemName: "chart.bar.fill")
-                    .font(.system(size: iconSize, weight: .semibold))
-                    .foregroundStyle(.white)
-            } action: {
-                onRightPrimary()
-            }
-            .accessibilityLabel("Statistiky")
-            
-            // Pravé kruhové tlačítko (karta/účtenka)
-            GlassCircleButton(size: circleSize, tint: tint) {
-                Image(systemName: "creditcard.fill")
-                    .font(.system(size: iconSize, weight: .semibold))
-                    .foregroundStyle(.white)
-            } action: {
-                onRightSecondary()
-            }
-            .accessibilityLabel("Karty")
+            .tint(tint)
         }
-        .tint(tint)
     }
 }
 
 // MARK: - Building Blocks
 
-// Kulaté tlačítko v „glass“ stylu (iOS 26+: .glassEffect)
+// Kulaté tlačítko v Liquid Glass stylu podle donnywals.com dokumentace
+// Používá .glassEffect(.regular.tint(...).interactive()) pro interaktivní efekty
 private struct GlassCircleButton<Content: View>: View {
     let size: CGFloat
     let tint: Color
@@ -157,24 +218,26 @@ private struct GlassCircleButton<Content: View>: View {
         Button(action: action) {
             ZStack {
                 if #available(iOS 26.0, *) {
+                    // Použití .glassEffect s .tint() a .interactive() podle dokumentace
+                    // Glass efekt se aplikuje přímo na Circle podle donnywals.com
                     Circle()
-                        .fill(.clear)
-                        .glassEffect(.regular, in: Circle())
+                        .glassEffect(.regular.tint(tint.opacity(0.20)).interactive())
                         .overlay(
-                            Circle().fill(tint.opacity(0.20))
-                        )
-                        .overlay(
-                            Circle().strokeBorder(tint.opacity(0.28), lineWidth: 1)
+                            Circle()
+                                .strokeBorder(tint.opacity(0.28), lineWidth: 1)
                         )
                         .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
                 } else {
+                    // Fallback pro starší verze iOS
                     Circle()
                         .fill(.ultraThinMaterial)
                         .overlay(
-                            Circle().fill(tint.opacity(0.18))
+                            Circle()
+                                .fill(tint.opacity(0.18))
                         )
                         .overlay(
-                            Circle().strokeBorder(tint.opacity(0.28), lineWidth: 1)
+                            Circle()
+                                .strokeBorder(tint.opacity(0.28), lineWidth: 1)
                         )
                         .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
                 }
@@ -188,7 +251,8 @@ private struct GlassCircleButton<Content: View>: View {
     }
 }
 
-// Roztažená pilulka pro vyhledávání v „glass“ stylu
+// Roztažená pilulka pro vyhledávání v Liquid Glass stylu podle donnywals.com dokumentace
+// Používá .glassEffect(.regular.tint(...).interactive()) pro interaktivní efekty
 private struct SearchBarPill: View {
     let height: CGFloat
     let tint: Color
@@ -197,45 +261,47 @@ private struct SearchBarPill: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
-                
-                Text(placeholder)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.85))
-                
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .frame(height: height)
-            .background(
-                Group {
-                    if #available(iOS 26.0, *) {
-                        Capsule()
-                            .fill(.clear)
-                            .glassEffect(.regular, in: Capsule())
-                            .overlay(
-                                Capsule().fill(tint.opacity(0.18))
-                            )
-                            .overlay(
-                                Capsule().strokeBorder(tint.opacity(0.22), lineWidth: 1)
-                            )
-                            .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
-                    } else {
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                Capsule().fill(tint.opacity(0.16))
-                            )
-                            .overlay(
-                                Capsule().strokeBorder(tint.opacity(0.22), lineWidth: 1)
-                            )
-                            .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
-                    }
+            ZStack {
+                if #available(iOS 26.0, *) {
+                    // Použití .glassEffect s .tint() a .interactive() podle dokumentace
+                    // Glass efekt se aplikuje přímo na Capsule podle donnywals.com
+                    Capsule()
+                        .glassEffect(.regular.tint(tint.opacity(0.18)).interactive())
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(tint.opacity(0.22), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.18), radius: 20, x: 0, y: 10)
+                } else {
+                    // Fallback pro starší verze iOS
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            Capsule()
+                                .fill(tint.opacity(0.16))
+                                .clipShape(Capsule())
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(tint.opacity(0.22), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 6)
                 }
-            )
+                
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                    
+                    Text(placeholder)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.85))
+                    
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 14)
+            }
+            .frame(height: height)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
