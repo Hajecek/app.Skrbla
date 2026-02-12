@@ -183,7 +183,7 @@ struct ManualAddView: View {
                         logAmountToConsole()
                         onContinue(amountDecimal)
                     }) {
-                        Text("Continue")
+                        Text("Pokračovat")
                             .font(.system(size: 24, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
