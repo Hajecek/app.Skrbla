@@ -9,8 +9,6 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// SkrblaWidgetAttributes je definován v LiveActivityManager.swift v hlavním targetu
-
 struct SkrblaWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SkrblaWidgetAttributes.self) { context in

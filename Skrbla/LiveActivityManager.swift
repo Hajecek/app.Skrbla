@@ -8,10 +8,11 @@
 import ActivityKit
 import Foundation
 
-// Definice atributů pro Live Activity
+// SkrblaWidgetAttributes — stejná definice je i ve widget extension
+// (ActivityKit vyžaduje typ v obou procesech).
+
 struct SkrblaWidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
         var currentAmount: Double
         var monthlyGoal: Double
         var lastTransaction: String
@@ -20,7 +21,6 @@ struct SkrblaWidgetAttributes: ActivityAttributes {
         var category: String
     }
 
-    // Fixed non-changing properties about your activity go here!
     var name: String
 }
 

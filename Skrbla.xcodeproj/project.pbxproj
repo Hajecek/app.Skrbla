@@ -61,6 +61,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		071DF54C2E5D9D0D00927A7B /* Exceptions for "Skrbla" folder in "Skrbla" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 071DF5482E5D9D0D00927A7B /* Skrbla */;
+		};
 		07906B7C2E723CE500F865B6 /* Exceptions for "SkrblaWidget" folder in "SkrblaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -73,6 +80,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		071DF54B2E5D9D0D00927A7B /* Skrbla */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				071DF54C2E5D9D0D00927A7B /* Exceptions for "Skrbla" folder in "Skrbla" target */,
+			);
 			path = Skrbla;
 			sourceTree = "<group>";
 		};
