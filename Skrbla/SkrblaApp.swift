@@ -2,143 +2,112 @@
 //  SkrblaApp.swift
 //  Skrbla
 //
-//  Created by Michal Hájek on 26.08.2025.
-//
 
 import SwiftUI
 
+private let onboardingCompletedKey = "Skrbla.hasCompletedOnboarding"
+private let appearanceModeKey = "settings.appearance.mode"
+
 @main
 struct SkrblaApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var authState = AuthState()
+    @StateObject private var sessionUnlock = SessionUnlockState()
+    @AppStorage(onboardingCompletedKey) private var hasCompletedOnboarding = false
+    @AppStorage(appearanceModeKey) private var appearanceModeRaw: String = "system"
     @State private var showLaunchScreen = true
-    @State private var showAuthentication = false
-    @State private var didFinishOnboarding = false
-    @AppStorage("isFirstLaunch") var isFirstLaunch: Bool = true
-    @AppStorage("wasLoggedOut") private var wasLoggedOut: Bool = false
-    @StateObject private var authManager = AuthenticationManager()
-    @StateObject private var appStateManager = AppStateManager()
+    @State private var showBiometricVerification = false
+    @State private var hasVerifiedBiometricThisSession = false
+    @State private var backgroundedAt: Date?
     @Environment(\.scenePhase) private var scenePhase
-    
+
+    private var needsImmediateBiometricOnResume: Bool {
+        guard authState.isLoggedIn, scenePhase == .active, let at = backgroundedAt else { return false }
+        return Date().timeIntervalSince(at) >= 5
+    }
+
+    private var shouldShowBiometricOverlay: Bool {
+        guard authState.isLoggedIn else { return false }
+        if showBiometricVerification || needsImmediateBiometricOnResume { return true }
+        if !showLaunchScreen, hasCompletedOnboarding, !hasVerifiedBiometricThisSession { return true }
+        return false
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch appearanceModeRaw {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // 1) Hlavní obsah – jen pokud je ověřen a není aktivní autentizační overlay
-                if authManager.isAuthenticated && !showAuthentication {
+                if showLaunchScreen {
+                    LaunchView(onFinish: { showLaunchScreen = false })
+                } else if !hasCompletedOnboarding {
+                    OnboardingView(onFinish: {
+                        hasCompletedOnboarding = true
+                        appDelegate.preparePushNotifications()
+                    })
+                } else if authState.isLoggedIn {
                     ContentView()
-                        .opacity(showLaunchScreen ? 0 : 1)
-                        .animation(.easeIn(duration: 0.3).delay(0.2), value: showLaunchScreen)
-                        .environmentObject(authManager)
-                        .environmentObject(appStateManager)
+                } else {
+                    LoginView()
                 }
-                
-                // 1.5) Explicitní přesměrování na LoginView po logoutu (trvalé, dokud se nepřihlásí)
-                if (appStateManager.forceLoginScreen || wasLoggedOut) && !authManager.isAuthenticated {
-                    LoginView(authManager: authManager)
-                        .transition(.opacity)
-                        .environmentObject(appStateManager)
-                }
-                
-                // 2) LoginView – pouze při prvním spuštění po dokončení onboardingu
-                if isFirstLaunch &&
-                    didFinishOnboarding &&
-                    !authManager.isAuthenticated &&
-                    !showLaunchScreen &&
-                    !showAuthentication &&
-                    !appStateManager.shouldRequireAuth &&
-                    !appStateManager.forceLoginScreen &&
-                    !wasLoggedOut {
-                    LoginView(authManager: authManager)
-                        .transition(.opacity)
-                        .environmentObject(appStateManager)
-                }
-                
-                // 3) Launch screen – VŽDY při startu, dokud je showLaunchScreen == true
-                // Odebrali jsme podmínku !wasLoggedOut, aby se Launch ukázal i po odhlášení.
-                if showLaunchScreen &&
-                    !showAuthentication &&
-                    !appStateManager.shouldRequireAuth &&
-                    !appStateManager.forceLoginScreen {
-                    LaunchView()
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    showLaunchScreen = false
-                                    // Po launchi: pokud je vyžadováno ověření z pozadí, zobraz auth overlay
-                                    if appStateManager.shouldRequireAuth {
-                                        showAuthentication = true
-                                    } else {
-                                        // Pokud už to není první spuštění a nejsme ověřeni, rovnou zobraz biometriku
-                                        if !isFirstLaunch && !authManager.isAuthenticated && !wasLoggedOut {
-                                            // Pokud jsme odhlášeni (wasLoggedOut), nechceme rovnou biometriku,
-                                            // protože zobrazujeme LoginView. Proto přidán !wasLoggedOut.
-                                            showAuthentication = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                }
-                
-                // 4) Onboarding – jen při prvním spuštění, po launchi, dokud není dokončen
-                if isFirstLaunch &&
-                    !didFinishOnboarding &&
-                    !showAuthentication &&
-                    !showLaunchScreen &&
-                    !appStateManager.shouldRequireAuth &&
-                    !appStateManager.forceLoginScreen &&
-                    !wasLoggedOut {
-                    OnboardingView {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            didFinishOnboarding = true
-                        }
-                    }
-                    .transition(.opacity)
-                }
-                
-                // 5) Biometrická autentizace – jen pokud nejsme v režimu „po logoutu drž LoginView“
-                if (showAuthentication ||
-                    appStateManager.shouldRequireAuth ||
-                    (!isFirstLaunch && !authManager.isAuthenticated && !showLaunchScreen)) &&
-                    !appStateManager.forceLoginScreen &&
-                    !wasLoggedOut {
-                    AuthenticationView(authManager: authManager)
-                        .transition(.opacity)
-                        .zIndex(1000)
-                }
-                
-                // 6) Privacy overlay – pro skutečné pozadí (App Switcher snapshot)
-                if appStateManager.isInBackground {
+
+                if scenePhase == .background {
                     PrivacyScreen()
-                        .transition(.opacity)
-                        .zIndex(2000)
+                        .ignoresSafeArea()
+                        .zIndex(2)
                 }
-            }
-            .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
-                // Pokud jsme po odhlášení (wasLoggedOut == true), nevyžaduj biometriku
-                if shouldRequire && !wasLoggedOut {
-                    print("🔄 Návrat z pozadí - vyžaduje se ověření")
-                    authManager.requireAuthentication()
-                    showAuthentication = true
-                    showLaunchScreen = false
-                }
-            }
-            .onReceive(authManager.$isAuthenticated) { isAuthenticated in
-                if isAuthenticated {
-                    print("✅ Ověření/přihlášení úspěšné - přesměrovávám")
-                    // Po úspěšném přihlášení vypnout režim „po logoutu“
-                    wasLoggedOut = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showAuthentication = false
+
+                if shouldShowBiometricOverlay {
+                    BiometricVerificationView(onSuccess: {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            showBiometricVerification = false
+                            hasVerifiedBiometricThisSession = true
+                            sessionUnlock.unlock()
                         }
-                        appStateManager.resetBackgroundState()
-                        appStateManager.forceLoginScreen = false
-                    }
+                    })
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(3)
                 }
             }
-            // DŮLEŽITÉ: odstraňujeme hacky, které vypínaly launch při wasLoggedOut,
-            // aby se LaunchView ukázalo při každém startu:
-            // - Žádné .onAppear { if wasLoggedOut { showLaunchScreen = false } }
-            // - Žádné .onChange(of: wasLoggedOut) { ... vypnutí launch ... }
+            .preferredColorScheme(preferredColorScheme)
+            .environmentObject(authState)
+            .environmentObject(appDelegate)
+            .environmentObject(sessionUnlock)
+            .environmentObject(FinanceStore.shared)
+            .environment(\.sessionUnlocked, sessionUnlock.isUnlocked)
+            .onChange(of: authState.isLoggedIn) { _, isLoggedIn in
+                if !isLoggedIn {
+                    sessionUnlock.lock()
+                    hasVerifiedBiometricThisSession = false
+                    LiveActivityManager.shared.endActivity()
+                }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background:
+                    backgroundedAt = Date()
+                case .inactive:
+                    if authState.isLoggedIn, let at = backgroundedAt, Date().timeIntervalSince(at) >= 5 {
+                        showBiometricVerification = true
+                        sessionUnlock.lock()
+                    }
+                case .active:
+                    if authState.isLoggedIn, let at = backgroundedAt, Date().timeIntervalSince(at) >= 5 {
+                        showBiometricVerification = true
+                        sessionUnlock.lock()
+                    }
+                    backgroundedAt = nil
+                default:
+                    break
+                }
+            }
         }
     }
 }

@@ -2,130 +2,139 @@
 //  LoginView.swift
 //  Skrbla
 //
-//  Created by Michal Hájek on 21.09.2025.
-//
 
 import SwiftUI
 
 struct LoginView: View {
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authState: AuthState
     @Environment(\.colorScheme) private var colorScheme
-    @ObservedObject var authManager: AuthenticationManager
-    @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
-    
-    @State private var email: String = ""
-    @State private var password: String = ""
-    @State private var isLoading: Bool = false
+
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isLoading = false
     @State private var errorMessage: String?
-    
+    @State private var appeared = false
+    @FocusState private var focusedField: AuthFieldFocus?
+
+    private var canSubmit: Bool {
+        !isLoading
+            && !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && password.count >= 4
+    }
+
     var body: some View {
-        ZStack {
-            Color(.systemBackground).ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                Spacer(minLength: 20)
-                    .frame(maxHeight: .infinity)
-                
-                VStack(spacing: 20) {
-                    // Logo / Branding
-                    Image(colorScheme == .dark ? "LogoDark" : "Logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 88, height: 88)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .padding(.bottom, 6)
-                    
-                    Text("Přihlášení")
-                        .font(.largeTitle.bold())
-                    
-                    // Form
-                    VStack(spacing: 14) {
-                        TextField("E‑mail", text: $email)
-                            .textContentType(.username)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .autocorrectionDisabled()
-                            .padding(14)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-                        
-                        SecureField("Heslo", text: $password)
-                            .textContentType(.password)
-                            .padding(14)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        NavigationStack {
+            AuthScreenChrome(appeared: appeared) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Vítej zpět")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(colorScheme == .dark ? .white : SkrblaTheme.slate)
+
+                    Text("Přihlas se a pokračuj v přehledu výdajů.")
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(colorScheme == .dark ? .white.opacity(0.55) : SkrblaTheme.slate.opacity(0.55))
+                        .padding(.top, 6)
+                        .padding(.bottom, 28)
+
+                    VStack(spacing: 22) {
+                        AuthTextField(
+                            title: "E-mail",
+                            systemImage: "envelope",
+                            text: $email,
+                            focus: .email,
+                            focusedField: $focusedField,
+                            contentType: .username,
+                            keyboard: .emailAddress,
+                            submitLabel: .next
+                        ) {
+                            focusedField = .password
+                        }
+
+                        AuthTextField(
+                            title: "Heslo",
+                            systemImage: "lock",
+                            isSecure: true,
+                            text: $password,
+                            focus: .password,
+                            focusedField: $focusedField,
+                            contentType: .password,
+                            submitLabel: .go
+                        ) {
+                            if canSubmit { performLogin() }
+                        }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    
+
                     if let errorMessage {
                         Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 20)
-                            .multilineTextAlignment(.center)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color(red: 0.78, green: 0.2, blue: 0.24))
+                            .padding(.top, 16)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                     }
-                    
-                    Button {
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                        login()
-                    } label: {
-                        HStack {
-                            if isLoading {
-                                ProgressView().tint(.white)
+
+                    AuthPrimaryButton(
+                        title: isLoading ? "Přihlašuji…" : "Přihlásit se",
+                        isLoading: isLoading,
+                        isEnabled: canSubmit
+                    ) {
+                        focusedField = nil
+                        performLogin()
+                    }
+                    .padding(.top, 28)
+
+                    VStack(spacing: 16) {
+                        NavigationLink {
+                            RegisterView()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Nemáš účet?")
+                                    .foregroundStyle(colorScheme == .dark ? .white.opacity(0.55) : SkrblaTheme.slate.opacity(0.55))
+                                Text("Vytvořit")
+                                    .foregroundStyle(SkrblaTheme.primaryDeep)
+                                    .fontWeight(.semibold)
                             }
-                            Text("Přihlásit se")
-                                .fontWeight(.semibold)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .foregroundStyle(.white)
+
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            authState.continueAsGuest()
+                        } label: {
+                            Text("Pokračovat bez přihlášení")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(colorScheme == .dark ? SkrblaTheme.primary : SkrblaTheme.primaryDeep)
+                        }
                     }
-                    .padding(.horizontal, 20)
-                    .disabled(isLoading || email.isEmpty || password.isEmpty)
-                    .opacity(isLoading || email.isEmpty || password.isEmpty ? 0.7 : 1)
-                    
-                    // Linky
-                    VStack(spacing: 8) {
-                        Button("Zapomenuté heslo?") {
-                            // TODO: reset hesla
-                        }
-                        .font(.footnote)
-                        
-                        Button("Vytvořit nový účet") {
-                            // TODO: registrace
-                        }
-                        .font(.footnote)
-                    }
-                    .padding(.bottom, 4)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 22)
+                    .padding(.bottom, 18)
                 }
-                
-                Spacer(minLength: 20)
-                    .frame(maxHeight: .infinity)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .onAppear {
+                withAnimation(.spring(response: 0.68, dampingFraction: 0.84)) {
+                    appeared = true
+                }
             }
         }
     }
-    
-    private func login() {
-        guard !email.isEmpty, !password.isEmpty else { return }
+
+    private func performLogin() {
         isLoading = true
         errorMessage = nil
-        
-        // Zde by normálně proběhl síťový request. Pro demo uděláme krátké zpoždění.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            // Simulace úspěchu – nahraď vlastní validací/API voláním
-            let success = true
-            
-            if success {
-                authManager.isAuthenticated = true
-                isFirstLaunch = false
-            } else {
-                errorMessage = "Neplatné přihlašovací údaje. Zkus to znovu."
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            let ok = authState.logIn(email: email, password: password)
             isLoading = false
+            if !ok {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    errorMessage = "Zadej e-mail a heslo (min. 4 znaky). Data jsou zatím jen lokální."
+                }
+            }
         }
     }
 }
 
 #Preview {
-    LoginView(authManager: AuthenticationManager())
+    LoginView()
+        .environmentObject(AuthState())
 }

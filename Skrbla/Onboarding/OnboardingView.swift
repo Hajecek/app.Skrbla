@@ -65,7 +65,7 @@ struct OnboardingView: View {
                         .textRenderer(TitleTextRenderer(progress: titleProgress))
                         .padding(.bottom, 12)
                     
-                    Text("Spravujte své zápasy rychle a jednoduše. Každý uživatel může přidávat a upravovat zápasy, vše přehledně a na dosah v jedné aplikaci. 🚀")
+                    Text("Sleduj výdaje, předplatná a rozpočet na jednom místě. Vše zatím lokálně v zařízení – rychle, přehledně a bez zbytečné komplikace.")
                         .font(.callout)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white.secondary)

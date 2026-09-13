@@ -2,565 +2,335 @@
 //  ProfileView.swift
 //  Skrbla
 //
-//  Created by Michal Hájek on 26.08.2025.
-//
 
 import SwiftUI
 
-// MARK: - Profile View (iOS 26-first card layout)
 struct ProfileView: View {
-    @Environment(\.colorScheme) private var scheme
-    @EnvironmentObject private var authManager: AuthenticationManager
-    @EnvironmentObject private var appStateManager: AppStateManager
-    @AppStorage("wasLoggedOut") private var wasLoggedOut: Bool = false
-    
-    // Mock data – napojte na Store/Model
-    private let displayName = "Michal Hájek"
-    private let email = "michal@skrbla.com"
-    private let itemsCount = 24
-    private let thisMonth = 8
-    private let total = 156
-    
-    // Stavy potvrzovacích dialogů (alert uprostřed)
-    @State private var showLogoutAlert = false
-    @State private var showDeleteAlert = false
-    
+    @EnvironmentObject private var authState: AuthState
+    @EnvironmentObject private var financeStore: FinanceStore
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isShowingEdit = false
+    @State private var showLogoutConfirm = false
+    @State private var appeared = false
+
+    private let avatarSize: CGFloat = 108
+    private let avatarOverlap: CGFloat = 54
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Sticky-like header card
-                    ProfileHeroHeader(name: displayName, email: email)
-                        .padding(.top, 12)
-                        .padding(.horizontal, 16)
-                    
-                    // Stats as a single card with 3 columns (more cohesive)
-                    StatsCard(items: itemsCount, month: thisMonth, total: total)
-                        .padding(.horizontal, 16)
-                    
-                    // Live activity card
-                    LiveActivityCard()
-                        .padding(.horizontal, 16)
-                    
-                    // Settings card (nativní řádky uvnitř karty)
-                    SettingsCard()
-                        .padding(.horizontal, 16)
-                    
-                    // Logout (plně červené) + Delete account (obrysové destruktivní)
-                    RedFilledDestructiveButton(
-                        title: "Odhlásit se",
-                        systemImage: "rectangle.portrait.and.arrow.right"
-                    ) {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        showLogoutAlert = true
-                    }
-                    .padding(.horizontal, 16)
-                    
-                    OutlineDestructiveButton(
-                        title: "Vymazat účet",
-                        systemImage: "trash"
-                    ) {
-                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                        showDeleteAlert = true
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
-                }
+        ScrollView {
+            VStack(spacing: 0) {
+                heroBand
+                contentSheet
             }
-            .background(.background)
-            .navigationTitle("Profil")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            // TODO: Edit profile
-                        } label: {
-                            Label("Upravit profil", systemImage: "pencil")
-                        }
-                        Button {
-                            // TODO: Share profile
-                        } label: {
-                            Label("Sdílet", systemImage: "square.and.arrow.up")
-                        }
+        }
+        .background(pageBackground)
+        .ignoresSafeArea(edges: .top)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.body.weight(.medium))
+                }
+                .accessibilityLabel("Nastavení")
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $isShowingEdit) {
+            NavigationStack {
+                EditProfileView()
+            }
+        }
+        .alert("Opravdu se chcete odhlásit?", isPresented: $showLogoutConfirm) {
+            Button("Zrušit", role: .cancel) {}
+            Button("Odhlásit", role: .destructive) {
+                authState.logOut()
+            }
+        } message: {
+            Text("Budete odhlášeni z vašeho účtu. Lokální data výdajů zůstanou v zařízení.")
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
+                appeared = true
+            }
+        }
+    }
+
+    private var heroBand: some View {
+        ZStack(alignment: .bottom) {
+            heroGradient
+                .frame(height: 248)
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(.white.opacity(0.08))
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 2)
+                        .offset(x: 50, y: -30)
+                }
+                .overlay(alignment: .topLeading) {
+                    Circle()
+                        .fill(SkrblaTheme.accent.opacity(0.18))
+                        .frame(width: 120, height: 120)
+                        .blur(radius: 18)
+                        .offset(x: -40, y: 40)
+                }
+
+            VStack(spacing: 10) {
+                Text("OSOBNÍ FINANCE")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.4)
+                    .foregroundStyle(.white.opacity(0.78))
+
+                Text(authState.currentUser?.displayName ?? "Uživatel")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .padding(.horizontal, 28)
+
+                if let email = authState.currentUser?.email {
+                    Text(email)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.78))
+                }
+
+                Spacer(minLength: avatarOverlap + 8)
+            }
+            .padding(.top, 88)
+            .frame(maxWidth: .infinity)
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 18)
+        }
+        .overlay(alignment: .bottom) {
+            UserAvatarView(user: authState.currentUser, size: avatarSize)
+                .overlay {
+                    Circle()
+                        .stroke(Color(uiColor: .systemBackground), lineWidth: 5)
+                }
+                .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 8)
+                .scaleEffect(appeared ? 1 : 0.82)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: avatarOverlap)
+                .contextMenu {
+                    Button {
+                        isShowingEdit = true
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label("Upravit profil", systemImage: "pencil")
                     }
-                    .accessibilityLabel("Možnosti")
                 }
-            }
-            // Centrální alerty
-            .alert("Opravdu se chcete odhlásit?", isPresented: $showLogoutAlert) {
-                Button("Odhlásit se", role: .destructive) {
-                    // Kompletní odhlášení + explicitní přesměrování na LoginView
-                    performLogoutAndGoToLogin()
-                }
-                Button("Zrušit", role: .cancel) {}
-            } message: {
-                Text("Budete muset znovu zadat přihlašovací údaje při příštím otevření aplikace.")
-            }
-            .alert("Trvale vymazat účet?", isPresented: $showDeleteAlert) {
-                Button("Vymazat účet", role: .destructive) {
-                    // TODO: Delete account action (nevratné)
-                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                }
-                Button("Zrušit", role: .cancel) {}
-            } message: {
-                Text("Tato akce je nevratná. Všechna vaše data budou smazána.")
-            }
         }
+        .zIndex(1)
     }
-    
-    private func performLogoutAndGoToLogin() {
-        // Haptics
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        // 1) Ukončit případné Live Aktivity
-        LiveActivityManager.shared.endActivity()
-        // 2) Vyčistit auth stav
-        authManager.logout()
-        // 3) Resetovat app background stav a vynutit LoginView
-        appStateManager.resetForLogout()
-        // 4) Trvalý příznak, aby se po restartu stále ukazoval LoginView, dokud se uživatel nepřihlásí
-        wasLoggedOut = true
-    }
-}
 
-// MARK: - Hero Header
-private struct ProfileHeroHeader: View {
-    var name: String
-    var email: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Avatar(size: 72, symbolSize: 30)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(name)
-                    .font(.title2.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Text(email)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                
-                HStack(spacing: 8) {
-                    Label("Účet ověřen", systemImage: "checkmark.seal.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .labelStyle(.titleAndIcon)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.green, .secondary)
-                }
-            }
-            
-            Spacer()
-            
-            Button {
-                // TODO: Open QR / profile code
-            } label: {
-                Image(systemName: "qrcode.viewfinder")
-                    .font(.system(size: 18, weight: .semibold))
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Zobrazit kód")
+    private var heroGradient: some View {
+        LinearGradient(
+            colors: [
+                SkrblaTheme.slate,
+                SkrblaTheme.primaryDeep.opacity(0.95),
+                SkrblaTheme.secondary
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var contentSheet: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            identityMeta
+                .padding(.top, avatarOverlap + 18)
+
+            factsBlock
+            actionsBlock
+            logoutBlock
         }
-        .padding(16)
+        .padding(.horizontal, 22)
+        .padding(.bottom, 36)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
-                )
+            UnevenRoundedRectangle(
+                topLeadingRadius: 28,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 28,
+                style: .continuous
+            )
+            .fill(Color(uiColor: .systemBackground))
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.08), radius: 20, y: -4)
+            .ignoresSafeArea(edges: .bottom)
         }
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 28)
     }
-}
 
-private struct Avatar: View {
-    var size: CGFloat = 64
-    var symbolSize: CGFloat = 26
-    
-    var body: some View {
-        ZStack {
-            if #available(iOS 26.0, *) {
-                Circle()
-                    .fill(.clear)
-                    .glassEffect(.regular, in: Circle())
-                    .overlay(
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.22))
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1)
-                    )
-            } else {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.18))
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(Color.accentColor.opacity(0.30), lineWidth: 1)
-                    )
-            }
-            Image(systemName: "person.fill")
-                .font(.system(size: symbolSize, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 1)
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
-    }
-}
-
-// MARK: - Stats Card
-private struct StatsCard: View {
-    var items: Int
-    var month: Int
-    var total: Int
-    
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Statistiky")
-                .font(.headline)
+    private var identityMeta: some View {
+        HStack(spacing: 12) {
+            Text("Lokální účet")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
-                .padding(.top, 12)
-            
-            LazyVGrid(columns: columns, spacing: 12) {
-                StatPill(title: "Položky", value: "\(items)", color: .blue, symbol: "tray.full.fill")
-                StatPill(title: "Tento měsíc", value: "\(month)", color: .green, symbol: "calendar")
-                StatPill(title: "Celkem", value: "\(total)", color: .orange, symbol: "sum")
-            }
-            .padding(12)
-            .padding(.top, -4)
+                .padding(.vertical, 8)
+                .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+            Spacer(minLength: 0)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
-                )
-        )
     }
-}
 
-private struct StatPill: View {
-    let title: String
-    let value: String
-    let color: Color
-    let symbol: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(color.opacity(0.18))
-                    Image(systemName: symbol)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(color)
-                }
-                .frame(width: 28, height: 28)
-                Spacer()
+    private var factsBlock: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            sectionLabel("Přehled")
+            VStack(spacing: 0) {
+                factRow(title: "Výdaje celkem", value: "\(financeStore.expenses.count)")
+                thinRule
+                factRow(title: "Tento měsíc", value: SkrblaTheme.formatCurrency(financeStore.thisMonthSpent))
+                thinRule
+                factRow(title: "Předplatná", value: "\(financeStore.activeSubscriptions.count)")
             }
-            Text(value)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(color)
-                .lineLimit(1)
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
-                )
-        )
     }
-}
 
-// MARK: - Live Activity Card
-private struct LiveActivityCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Live Aktivita", systemImage: "waveform.path.ecg.rectangle")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            
+    private var actionsBlock: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            sectionLabel("Možnosti")
             VStack(spacing: 10) {
-                Button {
-                    LiveActivityManager.shared.startActivity()
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                NavigationLink {
+                    SettingsView()
                 } label: {
-                    Label("Spustit", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                
-                HStack(spacing: 12) {
-                    Button {
-                        LiveActivityManager.shared.updateActivity(
-                            currentAmount: 15000,
-                            lastTransaction: "Platba za služby",
-                            amount: 1200,
-                            isPositive: false,
-                            category: "Služby"
-                        )
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    } label: {
-                        Label("Aktualizovat", systemImage: "arrow.triangle.2.circlepath")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button(role: .destructive) {
-                        LiveActivityManager.shared.endActivity()
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    } label: {
-                        Label("Ukončit", systemImage: "stop.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
-                )
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Live Aktivita")
-    }
-}
-
-// MARK: - Settings Card
-private struct SettingsCard: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            SettingsRow(title: "Upravit profil", systemImage: "person.circle") {
-                // TODO
-            }
-            Divider().opacity(0.08)
-            SettingsRow(title: "Notifikace", systemImage: "bell") {
-                // TODO
-            }
-            Divider().opacity(0.08)
-            SettingsRow(title: "Soukromí", systemImage: "lock") {
-                // TODO
-            }
-            Divider().opacity(0.08)
-            SettingsRow(title: "Nápověda", systemImage: "questionmark.circle") {
-                // TODO
-            }
-            Divider().opacity(0.08)
-            SettingsRow(title: "Nastavení", systemImage: "gear") {
-                // TODO
-            }
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.thinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.6)
-                )
-        )
-    }
-}
-
-private struct SettingsRow: View {
-    var title: String
-    var systemImage: String
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.16))
-                    Image(systemName: systemImage)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.tint)
-                }
-                .frame(width: 34, height: 34)
-                
-                Text(title)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Red Filled Destructive Button (Logout)
-private struct RedFilledDestructiveButton: View {
-    var title: String
-    var systemImage: String
-    var action: () -> Void
-    
-    var body: some View {
-        Button(role: .destructive, action: action) {
-            HStack {
-                Image(systemName: systemImage)
-                    .font(.system(size: 17, weight: .semibold))
-                Text(title)
-                    .font(.body.weight(.semibold))
-                Spacer()
-            }
-            .foregroundStyle(.white)
-            .padding(.vertical, 14)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.red)
-            )
-        }
-        .buttonStyle(.plain)
-        .tint(.white)
-        .accessibilityHint("Odhlásí vás z aplikace")
-    }
-}
-
-// MARK: - Outline Destructive Button (Delete Account)
-private struct OutlineDestructiveButton: View {
-    var title: String
-    var systemImage: String
-    var action: () -> Void
-    
-    var body: some View {
-        Button(role: .destructive, action: action) {
-            HStack {
-                Image(systemName: systemImage)
-                    .font(.system(size: 17, weight: .semibold))
-                Text(title)
-                    .font(.body.weight(.semibold))
-                Spacer()
-            }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.thinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(Color.red.opacity(0.6), lineWidth: 1.0)
+                    optionLabel(
+                        title: "Nastavení",
+                        detail: "Vzhled, rozpočet, data",
+                        symbol: "slider.horizontal.3"
                     )
-            )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    isShowingEdit = true
+                } label: {
+                    optionLabel(
+                        title: "Upravit profil",
+                        detail: "Jméno a e-mail",
+                        symbol: "person.text.rectangle"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var logoutBlock: some View {
+        Button {
+            showLogoutConfirm = true
+        } label: {
+            Text("Odhlásit se")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
         }
         .buttonStyle(.plain)
-        .tint(.red)
-        .accessibilityHint("Trvale vymaže váš účet a všechna data")
+        .padding(.top, 4)
     }
-}
 
-// MARK: - Legacy (ponecháno pro kompatibilitu s referencemi)
-struct StatCard: View {
-    let title: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(value)
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundColor(color)
-            
+    private var pageBackground: some View {
+        ZStack {
+            heroGradient.ignoresSafeArea()
+            Color(uiColor: .systemBackground)
+                .ignoresSafeArea(edges: .bottom)
+                .padding(.top, 200)
+        }
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.caption.weight(.bold))
+            .tracking(0.8)
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+    }
+
+    private func factRow(title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 128, alignment: .leading)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(color.opacity(0.1))
-                )
-        )
+        .padding(.vertical, 12)
+    }
+
+    private var thinRule: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.06))
+            .frame(height: 1)
+    }
+
+    private func optionLabel(title: String, detail: String, symbol: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(SkrblaTheme.primary)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
-struct ProfileMenuRow: View {
-    let icon: String
-    let title: String
-    let color: Color
-    let action: () -> Void
-    
+struct EditProfileView: View {
+    @EnvironmentObject private var authState: AuthState
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var email = ""
+
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                Circle()
-                    .fill(color.opacity(0.2))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: icon)
-                            .foregroundColor(color)
-                            .font(.system(size: 18))
-                    )
-                
-                Text(title)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.white.opacity(0.4))
-                    .font(.system(size: 14))
+        Form {
+            Section {
+                TextField("Jméno", text: $name)
+                TextField("E-mail", text: $email)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+            } footer: {
+                Text("Zatím se ukládá jen lokálně v zařízení.")
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.05))
-                    )
-            )
         }
-        .buttonStyle(PlainButtonStyle())
+        .navigationTitle("Upravit profil")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Zrušit") { dismiss() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Hotovo") {
+                    authState.updateProfile(name: name, email: email)
+                    dismiss()
+                }
+                .fontWeight(.semibold)
+            }
+        }
+        .onAppear {
+            name = authState.currentUser?.name ?? ""
+            email = authState.currentUser?.email ?? ""
+        }
     }
 }
 
@@ -568,7 +338,6 @@ struct ProfileMenuRow: View {
     NavigationStack {
         ProfileView()
     }
-    .preferredColorScheme(.dark)
-    .environmentObject(AuthenticationManager())
-    .environmentObject(AppStateManager())
+    .environmentObject(AuthState())
+    .environmentObject(FinanceStore.shared)
 }

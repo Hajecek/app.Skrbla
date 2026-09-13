@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0726DB082F5219D2000CC7F6 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 0726DB092F5219D2000CC7F6 /* FirebaseMessaging */; };
 		07906B652E723CE300F865B6 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07906B642E723CE300F865B6 /* WidgetKit.framework */; };
 		07906B672E723CE300F865B6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07906B662E723CE300F865B6 /* SwiftUI.framework */; };
 		07906B782E723CE500F865B6 /* SkrblaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 07906B622E723CE300F865B6 /* SkrblaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -60,21 +61,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		073225D42E7831E20092FA89 /* Exceptions for "Skrbla" folder in "SkrblaWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Add/ManualAddView.swift,
-				LiveActivityManager.swift,
-			);
-			target = 07906B612E723CE300F865B6 /* SkrblaWidgetExtension */;
-		};
-		079069F92E722A5000F865B6 /* Exceptions for "Skrbla" folder in "Skrbla" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 071DF5482E5D9D0D00927A7B /* Skrbla */;
-		};
 		07906B7C2E723CE500F865B6 /* Exceptions for "SkrblaWidget" folder in "SkrblaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -87,10 +73,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		071DF54B2E5D9D0D00927A7B /* Skrbla */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				079069F92E722A5000F865B6 /* Exceptions for "Skrbla" folder in "Skrbla" target */,
-				073225D42E7831E20092FA89 /* Exceptions for "Skrbla" folder in "SkrblaWidgetExtension" target */,
-			);
 			path = Skrbla;
 			sourceTree = "<group>";
 		};
@@ -119,6 +101,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0726DB082F5219D2000CC7F6 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +185,7 @@
 			);
 			name = Skrbla;
 			packageProductDependencies = (
+				0726DB092F5219D2000CC7F6 /* FirebaseMessaging */,
 			);
 			productName = Skrbla;
 			productReference = 071DF5492E5D9D0D00927A7B /* Skrbla.app */;
@@ -310,6 +294,9 @@
 			);
 			mainGroup = 071DF5402E5D9D0D00927A7B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0726DB0A2F5219D2000CC7F6 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 071DF54A2E5D9D0D00927A7B /* Products */;
 			projectDirPath = "";
@@ -530,9 +517,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Skrbla/Skrbla.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -548,11 +536,12 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hajecek.Skrbla;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -567,9 +556,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Skrbla/Skrbla.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = W6R3HZD7R4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -585,11 +575,12 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hajecek.Skrbla;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -774,6 +765,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0726DB0A2F5219D2000CC7F6 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0726DB092F5219D2000CC7F6 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0726DB0A2F5219D2000CC7F6 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 071DF5412E5D9D0D00927A7B /* Project object */;
 }

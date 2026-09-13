@@ -2,44 +2,18 @@
 //  ContentView.swift
 //  Skrbla
 //
-//  Created by Michal Hájek on 26.08.2025.
-//
 
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var authManager: AuthenticationManager
-    @EnvironmentObject var appStateManager: AppStateManager
-    
+    @EnvironmentObject private var authState: AuthState
+
     var body: some View {
         Group {
-            if #available(iOS 26.0, *) {
-                // Native iOS 26 TabView s mini playerem nad tab barem
-                iOS26TabContainer()
+            if authState.isLoggedIn {
+                TabMenuView()
             } else {
-                // Fallback: vlastní kapslový bar
-                MainContentView(tabs: TabItem.defaultTabs) { selectedIndex, onSelectTab in
-                    switch selectedIndex {
-                    case 0:
-                        HomeView()
-                    case 1:
-                        // Index 1 je "add" tlačítko - otevírá sheet, ne view
-                        EmptyView()
-                    case 2:
-                        HistoryView()
-                    case 3:
-                        SubscriptionView()
-                    case 4:
-                        ProfileView()
-                    default:
-                        HomeView()
-                    }
-                }
-            }
-        }
-        .onReceive(appStateManager.$shouldRequireAuth) { shouldRequire in
-            if shouldRequire {
-                authManager.requireAuthentication()
+                LoginView()
             }
         }
     }
@@ -47,6 +21,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .environmentObject(AuthenticationManager())
-        .environmentObject(AppStateManager())
+        .environmentObject(AuthState())
 }
